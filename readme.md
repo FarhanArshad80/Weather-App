@@ -1,6 +1,6 @@
 # Weather App
 
-A responsives, lightweight web application designed to deliver real-time weather information using HTML, CSS, and JavaScript.
+A responsive, lightweight web application designed to deliver real-time weather information using HTML, CSS, and JavaScript.
 
 ## Features
 * **Live Weather Data**: Get current weather metrics and details instantly.
