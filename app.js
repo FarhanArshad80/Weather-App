@@ -10,6 +10,8 @@ const descEl = document.getElementById('description');
 const locEl = document.getElementById('location');
 const humidityEl = document.getElementById('humidity');
 const windEl = document.getElementById('wind');
+const feelsLikeEl = document.getElementById('feels-like');
+const pressureEl = document.getElementById('pressure');
 const iconEl = document.getElementById('weather-icon');
 
 // Your active API key
@@ -49,7 +51,9 @@ async function checkWeather(city) {
         descEl.innerHTML = data.weather[0].description;
         locEl.innerHTML = `${data.name}, ${data.sys.country}`;
         humidityEl.innerHTML = `${data.main.humidity}%`;
-        windEl.innerHTML = `${Math.round(data.wind.speed * 3.6)} km/h`; 
+        windEl.innerHTML = `${Math.round(data.wind.speed * 3.6)} km/h`;
+        feelsLikeEl.innerHTML = `${Math.round(data.main.feels_like)}°C`;
+        pressureEl.innerHTML = `${data.main.pressure} hPa`;
 
         const iconCode = data.weather[0].icon;
         iconEl.src = `https://openweathermap.org/img/wn/${iconCode}@2x.png`;
