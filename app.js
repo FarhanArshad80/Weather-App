@@ -17,10 +17,21 @@ const iconEl = document.getElementById('weather-icon');
 // Your active API key
 const API_KEY = 'dfa121f8ce06e9d26b31b58ed5795778'; 
 
+// Toggles the search button between its idle icon and a spinner
+function setLoading(isLoading) {
+    searchBtn.disabled = isLoading;
+    searchBtn.classList.toggle('loading', isLoading);
+    searchBtn.innerHTML = isLoading
+        ? '<i class="fa-solid fa-spinner"></i>'
+        : '<i class="fa-solid fa-magnifying-glass"></i>';
+}
+
 async function checkWeather(city) {
     if (!city.trim()) return;
 
     const url = `https://api.openweathermap.org/data/2.5/weather?q=${city}&units=metric&appid=${API_KEY}`;
+
+    setLoading(true);
 
     try {
         const response = await fetch(url);
@@ -61,6 +72,8 @@ async function checkWeather(city) {
     } catch (error) {
         console.error("Error fetching weather data: ", error);
         alert("Network error or server down. Please try again.");
+    } finally {
+        setLoading(false);
     }
 }
 

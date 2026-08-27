@@ -96,6 +96,26 @@ body {
   color: #00ffff;
 }
 
+/* Loading state while a request is in flight */
+.search-box button:disabled {
+  cursor: not-allowed;
+  opacity: 0.8;
+}
+
+.search-box button:disabled:hover {
+  transform: none;
+  color: #fff;
+}
+
+.search-box button.loading i {
+  animation: spin 0.8s linear infinite;
+  display: inline-block;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
 /* Main Weather Display */
 .weather-box {
   margin-bottom: 30px;
