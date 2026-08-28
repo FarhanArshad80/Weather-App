@@ -13,7 +13,8 @@ body {
   align-items: center;
   padding: 20px;
   font-family: 'Poppins', sans-serif;
-  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: auto;
 }
 
 /* Container with animated glow */
@@ -33,10 +34,12 @@ body {
 }
 
 /* Animate glow effect on hover */
-.weather-container:hover {
-  box-shadow: 0 25px 70px rgba(0, 0, 0, 0.4);
-  border-color: rgba(255, 255, 255, 0.3);
-  transform: translateY(-5px);
+@media (hover: hover) {
+  .weather-container:hover {
+    box-shadow: 0 25px 70px rgba(0, 0, 0, 0.4);
+    border-color: rgba(255, 255, 255, 0.3);
+    transform: translateY(-5px);
+  }
 }
 
 /* Search Area */
@@ -239,4 +242,169 @@ body {
   60% { transform: translateX(-5px); }
   80% { transform: translateX(5px); }
   100% { transform: translateX(0); }
+}
+/* ---------------------------------------------------------------
+   Responsive breakpoints
+   The card is fluid up to 420px wide; below that the padding, the
+   type scale and the details grid all step down so nothing overflows
+   or gets clipped on small phones.
+---------------------------------------------------------------- */
+
+/* Small tablets and large phones */
+@media (max-width: 600px) {
+  body {
+    padding: 16px;
+    align-items: flex-start;
+  }
+
+  .weather-container {
+    padding: 32px 24px;
+    border-radius: 26px;
+  }
+
+  .search-box {
+    margin-bottom: 24px;
+  }
+
+  .weather-icon {
+    width: 104px;
+    height: 104px;
+  }
+
+  .temperature {
+    font-size: 3.2rem;
+  }
+
+  .description {
+    font-size: 1.15rem;
+  }
+
+  .location {
+    font-size: 1.3rem;
+  }
+
+  .weather-details {
+    gap: 14px;
+  }
+
+  .detail-card {
+    padding: 14px;
+    gap: 12px;
+    border-radius: 16px;
+  }
+
+  .detail-card i {
+    font-size: 1.6rem;
+    min-width: 24px;
+  }
+
+  .detail-card span {
+    font-size: 1.05rem;
+  }
+}
+
+/* Small phones — stack the detail cards so the labels stop wrapping */
+@media (max-width: 400px) {
+  body {
+    padding: 12px;
+  }
+
+  .weather-container {
+    padding: 26px 18px;
+    border-radius: 22px;
+  }
+
+  .search-box {
+    padding: 6px 14px;
+  }
+
+  .search-box i,
+  .search-box button {
+    font-size: 1.2rem;
+  }
+
+  .weather-icon {
+    width: 88px;
+    height: 88px;
+    margin-bottom: 10px;
+  }
+
+  .temperature {
+    font-size: 2.7rem;
+    letter-spacing: 1px;
+  }
+
+  .description {
+    font-size: 1.05rem;
+  }
+
+  .location {
+    font-size: 1.15rem;
+  }
+
+  .weather-details {
+    grid-template-columns: 1fr;
+    gap: 12px;
+    margin-top: 20px;
+  }
+}
+
+/* Short landscape viewports — trim the vertical rhythm so the whole
+   card still fits without the user having to scroll for the details. */
+@media (max-height: 560px) and (orientation: landscape) {
+  .weather-container {
+    max-width: 720px;
+    padding: 24px 28px;
+  }
+
+  .weather-box {
+    margin-bottom: 18px;
+  }
+
+  .weather-icon {
+    width: 76px;
+    height: 76px;
+    margin-bottom: 8px;
+  }
+
+  .temperature {
+    font-size: 2.4rem;
+  }
+
+  .weather-details {
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    margin-top: 16px;
+  }
+
+  .detail-card {
+    flex-direction: column;
+    text-align: center;
+    gap: 8px;
+    padding: 14px 10px;
+  }
+
+  .detail-card .text {
+    text-align: center;
+  }
+}
+
+/* Respect reduced-motion preferences */
+@media (prefers-reduced-motion: reduce) {
+  .weather-box,
+  .weather-details,
+  .error-box,
+  .search-box button.loading i {
+    animation: none;
+  }
+
+  .weather-details {
+    opacity: 1;
+  }
+
+  .weather-container,
+  .detail-card,
+  .weather-icon {
+    transition: none;
+  }
 }
