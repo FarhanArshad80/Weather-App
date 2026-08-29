@@ -26,10 +26,21 @@ function setLoading(isLoading) {
         : '<i class="fa-solid fa-magnifying-glass"></i>';
 }
 
-async function checkWeather(city) {
-    if (!city.trim()) return;
+// Renders a message in the error box and hides any stale weather results
+function showError(html) {
+    weatherBox.style.display = 'none';
+    weatherDetails.style.display = 'none';
+    errorBox.style.display = 'block';
+    errorBox.innerHTML = html;
+}
 
-    const url = `https://api.openweathermap.org/data/2.5/weather?q=${city}&units=metric&appid=${API_KEY}`;
+async function checkWeather(city) {
+    const query = city.trim();
+    if (!query) return;
+
+    // Names like "New York" or "Washington, D.C." need escaping before they
+    // can be dropped into the query string.
+    const url = `https://api.openweathermap.org/data/2.5/weather?q=${encodeURIComponent(query)}&units=metric&appid=${API_KEY}`;
 
     setLoading(true);
 
@@ -39,15 +50,11 @@ async function checkWeather(city) {
 
         // SAFETY CHECK: If response is not successful (anything other than 200)
         if (data.cod !== 200 && data.cod !== "200") {
-            weatherBox.style.display = 'none';
-            weatherDetails.style.display = 'none';
-            errorBox.style.display = 'block';
-            
             // Customize error text based on what went wrong
             if (data.cod === 401 || data.cod === "401") {
-                errorBox.innerHTML = "<p>API Key Activation Pending.<br><small>New keys take 1-2 hours to activate. Please try again later!</small></p>";
+                showError("<p>API Key Activation Pending.<br><small>New keys take 1-2 hours to activate. Please try again later!</small></p>");
             } else {
-                errorBox.innerHTML = "<p>Oops! City not found. Try again.</p>";
+                showError("<p>Oops! City not found. Try again.</p>");
             }
             return;
         }
@@ -71,7 +78,7 @@ async function checkWeather(city) {
 
     } catch (error) {
         console.error("Error fetching weather data: ", error);
-        alert("Network error or server down. Please try again.");
+        showError("<p>Couldn't reach the weather service.<br><small>Check your connection and try again.</small></p>");
     } finally {
         setLoading(false);
     }
