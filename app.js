@@ -17,6 +17,27 @@ const iconEl = document.getElementById('weather-icon');
 // Your active API key
 const API_KEY = 'dfa121f8ce06e9d26b31b58ed5795778'; 
 
+// Where the most recent successful search is remembered between visits
+const LAST_CITY_KEY = 'weather-app:last-city';
+
+// localStorage throws in private windows and when site data is blocked, so
+// every read and write has to survive on its own.
+function rememberCity(city) {
+    try {
+        localStorage.setItem(LAST_CITY_KEY, city);
+    } catch (error) {
+        /* storage unavailable - the app still works, it just forgets */
+    }
+}
+
+function recallCity() {
+    try {
+        return localStorage.getItem(LAST_CITY_KEY);
+    } catch (error) {
+        return null;
+    }
+}
+
 // Toggles the search button between its idle icon and a spinner
 function setLoading(isLoading) {
     searchBtn.disabled = isLoading;
@@ -76,6 +97,9 @@ async function checkWeather(city) {
         const iconCode = data.weather[0].icon;
         iconEl.src = `https://openweathermap.org/img/wn/${iconCode}@2x.png`;
 
+        // Only a city the API actually resolved is worth restoring next time
+        rememberCity(data.name);
+
     } catch (error) {
         console.error("Error fetching weather data: ", error);
         showError("<p>Couldn't reach the weather service.<br><small>Check your connection and try again.</small></p>");
@@ -94,3 +118,11 @@ cityInput.addEventListener('keydown', (event) => {
         checkWeather(cityInput.value);
     }
 });
+
+// Bring back the last city that was looked up so a return visit opens on
+// something useful instead of the empty placeholder card.
+const lastCity = recallCity();
+if (lastCity) {
+    cityInput.value = lastCity;
+    checkWeather(lastCity);
+}
