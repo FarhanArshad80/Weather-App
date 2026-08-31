@@ -4,6 +4,7 @@ const searchBtn = document.getElementById('search-btn');
 const weatherBox = document.getElementById('weather-box');
 const weatherDetails = document.getElementById('weather-details');
 const errorBox = document.getElementById('error-box');
+const recentBox = document.getElementById('recent-searches');
 
 const tempEl = document.getElementById('temp');
 const descEl = document.getElementById('description');
@@ -17,25 +18,66 @@ const iconEl = document.getElementById('weather-icon');
 // Your active API key
 const API_KEY = 'dfa121f8ce06e9d26b31b58ed5795778'; 
 
-// Where the most recent successful search is remembered between visits
+// Where past searches are remembered between visits. LAST_CITY_KEY is what
+// earlier versions wrote; it is still read once so nobody loses their city
+// when the list format arrives.
+const RECENT_KEY = 'weather-app:recent-cities';
 const LAST_CITY_KEY = 'weather-app:last-city';
+const MAX_RECENT = 5;
 
 // localStorage throws in private windows and when site data is blocked, so
 // every read and write has to survive on its own.
-function rememberCity(city) {
+function recallCities() {
     try {
-        localStorage.setItem(LAST_CITY_KEY, city);
+        const stored = JSON.parse(localStorage.getItem(RECENT_KEY));
+
+        if (Array.isArray(stored)) {
+            return stored.filter((city) => typeof city === 'string').slice(0, MAX_RECENT);
+        }
+
+        const legacy = localStorage.getItem(LAST_CITY_KEY);
+
+        return legacy ? [legacy] : [];
     } catch (error) {
-        /* storage unavailable - the app still works, it just forgets */
+        return [];
     }
 }
 
-function recallCity() {
+function rememberCity(city) {
+    // Newest first, no duplicates - searching "paris" again should move
+    // Paris to the front rather than add a second chip.
+    const recent = [
+        city,
+        ...recallCities().filter((name) => name.toLowerCase() !== city.toLowerCase()),
+    ].slice(0, MAX_RECENT);
+
     try {
-        return localStorage.getItem(LAST_CITY_KEY);
+        localStorage.setItem(RECENT_KEY, JSON.stringify(recent));
     } catch (error) {
-        return null;
+        /* storage unavailable - the app still works, it just forgets */
     }
+
+    renderRecent(recent);
+}
+
+// Draws one chip per remembered city; clicking a chip searches it again.
+function renderRecent(cities) {
+    recentBox.innerHTML = '';
+    recentBox.hidden = cities.length === 0;
+
+    cities.forEach((city) => {
+        const chip = document.createElement('button');
+
+        chip.type = 'button';
+        chip.className = 'recent-chip';
+        chip.textContent = city;
+        chip.addEventListener('click', () => {
+            cityInput.value = city;
+            checkWeather(city);
+        });
+
+        recentBox.appendChild(chip);
+    });
 }
 
 // Toggles the search button between its idle icon and a spinner
@@ -121,8 +163,10 @@ cityInput.addEventListener('keydown', (event) => {
 
 // Bring back the last city that was looked up so a return visit opens on
 // something useful instead of the empty placeholder card.
-const lastCity = recallCity();
-if (lastCity) {
-    cityInput.value = lastCity;
-    checkWeather(lastCity);
+const recentCities = recallCities();
+renderRecent(recentCities);
+
+if (recentCities.length > 0) {
+    cityInput.value = recentCities[0];
+    checkWeather(recentCities[0]);
 }

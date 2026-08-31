@@ -119,6 +119,30 @@ body {
   to { transform: rotate(360deg); }
 }
 
+/* Recently searched cities */
+.recent-searches {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: -20px 0 26px;
+}
+
+.recent-chip {
+  background: rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 999px;
+  padding: 6px 14px;
+  color: #fff;
+  font-size: 0.82rem;
+  cursor: pointer;
+  transition: background 0.25s, transform 0.2s;
+}
+
+.recent-chip:hover {
+  background: rgba(255, 255, 255, 0.3);
+  transform: translateY(-2px);
+}
+
 /* Main Weather Display */
 .weather-box {
   margin-bottom: 30px;
