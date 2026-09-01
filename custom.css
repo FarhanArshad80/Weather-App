@@ -119,12 +119,50 @@ body {
   to { transform: rotate(360deg); }
 }
 
+/* Celsius / Fahrenheit switch */
+.unit-switch {
+  display: flex;
+  justify-content: center;
+  gap: 4px;
+  width: fit-content;
+  margin: -20px auto 22px;
+  padding: 4px;
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  border-radius: 999px;
+}
+
+.unit-btn {
+  min-width: 52px;
+  padding: 6px 14px;
+  border: none;
+  border-radius: 999px;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.75);
+  font-family: inherit;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.25s, color 0.25s;
+}
+
+.unit-btn:hover {
+  color: #fff;
+}
+
+.unit-btn.is-active {
+  background: rgba(255, 255, 255, 0.32);
+  color: #fff;
+}
+
 /* Recently searched cities */
 .recent-searches {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
-  margin: -20px 0 26px;
+  /* The unit switch now sits directly under the search box and carries the
+     pull-up, so the chips only need their own spacing below. */
+  margin: 0 0 26px;
 }
 
 .recent-chip {

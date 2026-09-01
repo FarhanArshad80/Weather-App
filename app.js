@@ -5,6 +5,8 @@ const weatherBox = document.getElementById('weather-box');
 const weatherDetails = document.getElementById('weather-details');
 const errorBox = document.getElementById('error-box');
 const recentBox = document.getElementById('recent-searches');
+const metricBtn = document.getElementById('unit-metric');
+const imperialBtn = document.getElementById('unit-imperial');
 
 const tempEl = document.getElementById('temp');
 const descEl = document.getElementById('description');
@@ -23,7 +25,36 @@ const API_KEY = 'dfa121f8ce06e9d26b31b58ed5795778';
 // when the list format arrives.
 const RECENT_KEY = 'weather-app:recent-cities';
 const LAST_CITY_KEY = 'weather-app:last-city';
+const UNIT_KEY = 'weather-app:units';
 const MAX_RECENT = 5;
+
+// Readings always come back from the API in metric and are converted here,
+// so switching units redraws the card instead of costing another request.
+let units = recallUnits();
+let lastReading = null;
+
+function recallUnits() {
+    try {
+        return localStorage.getItem(UNIT_KEY) === 'imperial' ? 'imperial' : 'metric';
+    } catch (error) {
+        return 'metric';
+    }
+}
+
+function toTemperature(celsius) {
+    return units === 'imperial' ? celsius * 9 / 5 + 32 : celsius;
+}
+
+function temperatureText(celsius) {
+    return `${Math.round(toTemperature(celsius))}°${units === 'imperial' ? 'F' : 'C'}`;
+}
+
+// The API reports wind in metres per second whatever the units asked for.
+function windText(metresPerSecond) {
+    return units === 'imperial'
+        ? `${Math.round(metresPerSecond * 2.237)} mph`
+        : `${Math.round(metresPerSecond * 3.6)} km/h`;
+}
 
 // localStorage throws in private windows and when site data is blocked, so
 // every read and write has to survive on its own.
@@ -97,6 +128,62 @@ function showError(html) {
     errorBox.innerHTML = html;
 }
 
+// Paints one reading into the card using whichever units are selected.
+function renderWeather(data) {
+    errorBox.style.display = 'none';
+    weatherBox.style.display = 'block';
+    weatherDetails.style.display = 'grid';
+
+    tempEl.innerHTML = temperatureText(data.main.temp);
+    descEl.innerHTML = data.weather[0].description;
+    locEl.innerHTML = `${data.name}, ${data.sys.country}`;
+    humidityEl.innerHTML = `${data.main.humidity}%`;
+    windEl.innerHTML = windText(data.wind.speed);
+    feelsLikeEl.innerHTML = temperatureText(data.main.feels_like);
+    pressureEl.innerHTML = `${data.main.pressure} hPa`;
+
+    iconEl.src = `https://openweathermap.org/img/wn/${data.weather[0].icon}@2x.png`;
+}
+
+function renderUnitSwitch() {
+    const metric = units === 'metric';
+
+    metricBtn.classList.toggle('is-active', metric);
+    imperialBtn.classList.toggle('is-active', !metric);
+    metricBtn.setAttribute('aria-pressed', String(metric));
+    imperialBtn.setAttribute('aria-pressed', String(!metric));
+}
+
+// Redraws whatever the card is currently showing — a real reading, or the
+// placeholder, which should not advertise units the switch says are off.
+function refreshReadout() {
+    if (lastReading) {
+        renderWeather(lastReading);
+        return;
+    }
+
+    const symbol = units === 'imperial' ? 'F' : 'C';
+
+    tempEl.innerHTML = `--°${symbol}`;
+    feelsLikeEl.innerHTML = `--°${symbol}`;
+    windEl.innerHTML = units === 'imperial' ? '-- mph' : '-- km/h';
+}
+
+function setUnits(next) {
+    if (next === units) return;
+
+    units = next;
+
+    try {
+        localStorage.setItem(UNIT_KEY, units);
+    } catch (error) {
+        /* storage unavailable - the choice just will not survive a reload */
+    }
+
+    renderUnitSwitch();
+    refreshReadout();
+}
+
 async function checkWeather(city) {
     const query = city.trim();
     if (!query) return;
@@ -122,22 +209,8 @@ async function checkWeather(city) {
             return;
         }
 
-        // If successful, hide error and reveal data layouts
-        errorBox.style.display = 'none';
-        weatherBox.style.display = 'block';
-        weatherDetails.style.display = 'grid';
-
-        // Update values safely in UI
-        tempEl.innerHTML = `${Math.round(data.main.temp)}°C`;
-        descEl.innerHTML = data.weather[0].description;
-        locEl.innerHTML = `${data.name}, ${data.sys.country}`;
-        humidityEl.innerHTML = `${data.main.humidity}%`;
-        windEl.innerHTML = `${Math.round(data.wind.speed * 3.6)} km/h`;
-        feelsLikeEl.innerHTML = `${Math.round(data.main.feels_like)}°C`;
-        pressureEl.innerHTML = `${data.main.pressure} hPa`;
-
-        const iconCode = data.weather[0].icon;
-        iconEl.src = `https://openweathermap.org/img/wn/${iconCode}@2x.png`;
+        lastReading = data;
+        renderWeather(data);
 
         // Only a city the API actually resolved is worth restoring next time
         rememberCity(data.name);
@@ -155,6 +228,9 @@ searchBtn.addEventListener('click', () => {
     checkWeather(cityInput.value);
 });
 
+metricBtn.addEventListener('click', () => setUnits('metric'));
+imperialBtn.addEventListener('click', () => setUnits('imperial'));
+
 cityInput.addEventListener('keydown', (event) => {
     if (event.key === 'Enter') {
         checkWeather(cityInput.value);
@@ -163,6 +239,9 @@ cityInput.addEventListener('keydown', (event) => {
 
 // Bring back the last city that was looked up so a return visit opens on
 // something useful instead of the empty placeholder card.
+renderUnitSwitch();
+refreshReadout();
+
 const recentCities = recallCities();
 renderRecent(recentCities);
 
