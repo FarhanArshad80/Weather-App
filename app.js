@@ -7,6 +7,7 @@ const errorBox = document.getElementById('error-box');
 const recentBox = document.getElementById('recent-searches');
 const metricBtn = document.getElementById('unit-metric');
 const imperialBtn = document.getElementById('unit-imperial');
+const locateBtn = document.getElementById('locate-btn');
 
 const tempEl = document.getElementById('temp');
 const descEl = document.getElementById('description');
@@ -203,13 +204,10 @@ function setUnits(next) {
     refreshReadout();
 }
 
-async function checkWeather(city) {
-    const query = city.trim();
-    if (!query) return;
-
-    // Names like "New York" or "Washington, D.C." need escaping before they
-    // can be dropped into the query string.
-    const url = `https://api.openweathermap.org/data/2.5/weather?q=${encodeURIComponent(query)}&units=metric&appid=${API_KEY}`;
+// Both the search box and the locate button end up here; only the query
+// half of the URL differs, so the response handling lives in one place.
+async function loadWeather(query) {
+    const url = `https://api.openweathermap.org/data/2.5/weather?${query}&units=metric&appid=${API_KEY}`;
 
     setLoading(true);
 
@@ -242,10 +240,57 @@ async function checkWeather(city) {
     }
 }
 
+function checkWeather(city) {
+    const query = city.trim();
+    if (!query) return;
+
+    // Names like "New York" or "Washington, D.C." need escaping before they
+    // can be dropped into the query string.
+    return loadWeather(`q=${encodeURIComponent(query)}`);
+}
+
+// Asking the browser where we are saves typing a city that the API may well
+// spell differently anyway — it answers with whatever name it files those
+// coordinates under, and that name is what gets remembered.
+function locateMe() {
+    if (!navigator.geolocation) {
+        showError("<p>This browser can't share your location.<br><small>Type a city name instead.</small></p>");
+        return;
+    }
+
+    locateBtn.disabled = true;
+    locateBtn.classList.add('locating');
+
+    navigator.geolocation.getCurrentPosition(
+        (position) => {
+            const { latitude, longitude } = position.coords;
+
+            locateBtn.disabled = false;
+            locateBtn.classList.remove('locating');
+            loadWeather(`lat=${latitude}&lon=${longitude}`);
+        },
+        (error) => {
+            locateBtn.disabled = false;
+            locateBtn.classList.remove('locating');
+
+            // A refused prompt is a choice, not a fault — say what to do next
+            // rather than reporting it as a failure.
+            showError(
+                error.code === error.PERMISSION_DENIED
+                    ? "<p>Location access is off.<br><small>Allow it in your browser, or search for a city.</small></p>"
+                    : "<p>Couldn't pin down your location.<br><small>Try searching for a city instead.</small></p>"
+            );
+        },
+        { timeout: 10000, maximumAge: 5 * 60 * 1000 }
+    );
+}
+
 // Event Listeners
 searchBtn.addEventListener('click', () => {
     checkWeather(cityInput.value);
 });
+
+locateBtn.addEventListener('click', locateMe);
 
 metricBtn.addEventListener('click', () => setUnits('metric'));
 imperialBtn.addEventListener('click', () => setUnits('imperial'));

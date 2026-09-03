@@ -115,6 +115,19 @@ body {
   display: inline-block;
 }
 
+/* Waiting on the browser's location prompt — the crosshair pulses rather
+   than spins, so it does not read as another request in flight. */
+.search-box button.locating i {
+  animation: locating-pulse 1s ease-in-out infinite;
+  display: inline-block;
+  color: #00ffff;
+}
+
+@keyframes locating-pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.45; transform: scale(0.85); }
+}
+
 @keyframes spin {
   to { transform: rotate(360deg); }
 }
@@ -456,7 +469,8 @@ body {
   .weather-box,
   .weather-details,
   .error-box,
-  .search-box button.loading i {
+  .search-box button.loading i,
+  .search-box button.locating i {
     animation: none;
   }
 
