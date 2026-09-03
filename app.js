@@ -15,6 +15,8 @@ const humidityEl = document.getElementById('humidity');
 const windEl = document.getElementById('wind');
 const feelsLikeEl = document.getElementById('feels-like');
 const pressureEl = document.getElementById('pressure');
+const sunriseEl = document.getElementById('sunrise');
+const sunsetEl = document.getElementById('sunset');
 const iconEl = document.getElementById('weather-icon');
 
 // Your active API key
@@ -54,6 +56,21 @@ function windText(metresPerSecond) {
     return units === 'imperial'
         ? `${Math.round(metresPerSecond * 2.237)} mph`
         : `${Math.round(metresPerSecond * 3.6)} km/h`;
+}
+
+// Sunrise and sunset arrive as UTC epoch seconds, and `timezone` is the
+// city's offset from UTC in seconds. Adding the two and then reading the
+// UTC parts back gives the clock time *there* — 6:41 AM in Tokyo stays
+// 6:41 AM however far away the person reading it happens to be.
+function clockText(epochSeconds, offsetSeconds = 0) {
+    if (typeof epochSeconds !== 'number') return '--:--';
+
+    const shifted = new Date((epochSeconds + offsetSeconds) * 1000);
+    const hours = shifted.getUTCHours();
+    const minutes = String(shifted.getUTCMinutes()).padStart(2, '0');
+    const suffix = hours < 12 ? 'AM' : 'PM';
+
+    return `${hours % 12 || 12}:${minutes} ${suffix}`;
 }
 
 // localStorage throws in private windows and when site data is blocked, so
@@ -141,6 +158,8 @@ function renderWeather(data) {
     windEl.innerHTML = windText(data.wind.speed);
     feelsLikeEl.innerHTML = temperatureText(data.main.feels_like);
     pressureEl.innerHTML = `${data.main.pressure} hPa`;
+    sunriseEl.innerHTML = clockText(data.sys.sunrise, data.timezone);
+    sunsetEl.innerHTML = clockText(data.sys.sunset, data.timezone);
 
     iconEl.src = `https://openweathermap.org/img/wn/${data.weather[0].icon}@2x.png`;
 }
