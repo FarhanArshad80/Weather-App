@@ -300,6 +300,86 @@ body {
   margin-top: 4px;
 }
 
+/* Five-day outlook strip */
+.forecast {
+  margin-top: 25px;
+  animation: fadeInUp 1s ease forwards;
+}
+
+.forecast-title {
+  font-size: 0.85rem;
+  font-weight: 600;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  text-align: left;
+  color: rgba(255, 255, 255, 0.7);
+  margin-bottom: 12px;
+}
+
+/* Five tiles never fit comfortably on a narrow phone, so the row scrolls
+   sideways instead of squeezing the labels into two lines each. */
+.forecast-strip {
+  display: flex;
+  gap: 10px;
+  overflow-x: auto;
+  padding-bottom: 6px;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.35) transparent;
+}
+
+.forecast-strip::-webkit-scrollbar {
+  height: 6px;
+}
+
+.forecast-strip::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.35);
+  border-radius: 999px;
+}
+
+.forecast-day {
+  flex: 1 0 68px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 16px;
+  padding: 12px 6px;
+  text-align: center;
+  transition: background 0.3s ease, transform 0.3s ease;
+}
+
+.forecast-day:hover {
+  background: rgba(255, 255, 255, 0.2);
+  transform: translateY(-3px);
+}
+
+.forecast-label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.forecast-icon {
+  width: 46px;
+  height: 46px;
+  display: block;
+  margin: 2px auto;
+}
+
+.forecast-range {
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+  font-size: 0.82rem;
+}
+
+.forecast-high {
+  font-weight: 700;
+  color: #fff;
+}
+
+.forecast-low {
+  color: rgba(255, 255, 255, 0.6);
+}
+
 /* Error Message with animated appearance */
 .error-box {
   display: none;
@@ -462,12 +542,17 @@ body {
   .detail-card .text {
     text-align: center;
   }
+
+  .forecast {
+    margin-top: 16px;
+  }
 }
 
 /* Respect reduced-motion preferences */
 @media (prefers-reduced-motion: reduce) {
   .weather-box,
   .weather-details,
+  .forecast,
   .error-box,
   .search-box button.loading i,
   .search-box button.locating i {
@@ -480,6 +565,7 @@ body {
 
   .weather-container,
   .detail-card,
+  .forecast-day,
   .weather-icon {
     transition: none;
   }

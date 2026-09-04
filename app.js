@@ -19,6 +19,8 @@ const pressureEl = document.getElementById('pressure');
 const sunriseEl = document.getElementById('sunrise');
 const sunsetEl = document.getElementById('sunset');
 const iconEl = document.getElementById('weather-icon');
+const forecastBox = document.getElementById('forecast');
+const forecastStrip = document.getElementById('forecast-strip');
 
 // Your active API key
 const API_KEY = 'dfa121f8ce06e9d26b31b58ed5795778'; 
@@ -30,11 +32,14 @@ const RECENT_KEY = 'weather-app:recent-cities';
 const LAST_CITY_KEY = 'weather-app:last-city';
 const UNIT_KEY = 'weather-app:units';
 const MAX_RECENT = 5;
+const MAX_FORECAST_DAYS = 5;
+const DAY_NAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
 // Readings always come back from the API in metric and are converted here,
 // so switching units redraws the card instead of costing another request.
 let units = recallUnits();
 let lastReading = null;
+let lastForecast = null;
 
 function recallUnits() {
     try {
@@ -72,6 +77,13 @@ function clockText(epochSeconds, offsetSeconds = 0) {
     const suffix = hours < 12 ? 'AM' : 'PM';
 
     return `${hours % 12 || 12}:${minutes} ${suffix}`;
+}
+
+// Which calendar day a moment falls on depends on where you are standing.
+// Shifting by the city's offset first, then reading the UTC date back, keeps
+// a 11pm Tokyo reading on the Tokyo day it belongs to.
+function dateKey(epochSeconds, offsetSeconds = 0) {
+    return new Date((epochSeconds + offsetSeconds) * 1000).toISOString().slice(0, 10);
 }
 
 // localStorage throws in private windows and when site data is blocked, so
@@ -140,6 +152,7 @@ function setLoading(isLoading) {
 
 // Renders a message in the error box and hides any stale weather results
 function showError(html) {
+    hideForecast();
     weatherBox.style.display = 'none';
     weatherDetails.style.display = 'none';
     errorBox.style.display = 'block';
@@ -174,9 +187,122 @@ function renderUnitSwitch() {
     imperialBtn.setAttribute('aria-pressed', String(!metric));
 }
 
+// The forecast endpoint answers with a reading every three hours, which is
+// far more than a five-day glance needs. Entries are bucketed by the day
+// they fall on *in the city*, and each bucket keeps its own high, low and
+// the icon nearest midday — the one that describes the day people will live
+// through rather than whatever was happening at 3am.
+function summariseForecast(data) {
+    const offset = typeof data.city?.timezone === 'number' ? data.city.timezone : 0;
+    const todayKey = dateKey(Date.now() / 1000, offset);
+    const days = new Map();
+
+    data.list.forEach((entry) => {
+        const key = dateKey(entry.dt, offset);
+
+        // Today is already the card above; the strip is about what comes next.
+        if (key === todayKey) return;
+
+        const shifted = new Date((entry.dt + offset) * 1000);
+        const day = days.get(key) || {
+            label: DAY_NAMES[shifted.getUTCDay()],
+            min: entry.main.temp_min,
+            max: entry.main.temp_max,
+            icon: entry.weather[0].icon,
+            description: entry.weather[0].description,
+            hoursFromNoon: Infinity,
+        };
+
+        day.min = Math.min(day.min, entry.main.temp_min);
+        day.max = Math.max(day.max, entry.main.temp_max);
+
+        const hoursFromNoon = Math.abs(shifted.getUTCHours() - 12);
+
+        if (hoursFromNoon < day.hoursFromNoon) {
+            day.hoursFromNoon = hoursFromNoon;
+            day.icon = entry.weather[0].icon;
+            day.description = entry.weather[0].description;
+        }
+
+        days.set(key, day);
+    });
+
+    return [...days.values()].slice(0, MAX_FORECAST_DAYS);
+}
+
+// Draws one tile per upcoming day. Temperatures go through the same
+// converter as the main card, so the unit switch moves the strip with it.
+function renderForecast(days) {
+    forecastStrip.innerHTML = '';
+    forecastBox.hidden = days.length === 0;
+
+    days.forEach((day) => {
+        const tile = document.createElement('div');
+        tile.className = 'forecast-day';
+
+        const label = document.createElement('p');
+        label.className = 'forecast-label';
+        label.textContent = day.label;
+
+        const icon = document.createElement('img');
+        icon.className = 'forecast-icon';
+        icon.src = `https://openweathermap.org/img/wn/${day.icon}.png`;
+        icon.alt = day.description;
+        icon.title = day.description;
+
+        const high = document.createElement('span');
+        high.className = 'forecast-high';
+        high.textContent = temperatureText(day.max);
+
+        const low = document.createElement('span');
+        low.className = 'forecast-low';
+        low.textContent = temperatureText(day.min);
+
+        const range = document.createElement('p');
+        range.className = 'forecast-range';
+        range.append(high, low);
+
+        tile.append(label, icon, range);
+        forecastStrip.appendChild(tile);
+    });
+}
+
+function hideForecast() {
+    lastForecast = null;
+    forecastStrip.innerHTML = '';
+    forecastBox.hidden = true;
+}
+
+// A second request for a nice-to-have: if it fails the card above it is
+// still correct, so the strip simply stays out of the way rather than
+// turning a working lookup into an error.
+async function loadForecast(query) {
+    const url = `https://api.openweathermap.org/data/2.5/forecast?${query}&units=metric&appid=${API_KEY}`;
+
+    try {
+        const response = await fetch(url);
+        const data = await response.json();
+
+        if (String(data.cod) !== '200' || !Array.isArray(data.list)) {
+            hideForecast();
+            return;
+        }
+
+        lastForecast = summariseForecast(data);
+        renderForecast(lastForecast);
+    } catch (error) {
+        console.error('Error fetching forecast data: ', error);
+        hideForecast();
+    }
+}
+
 // Redraws whatever the card is currently showing — a real reading, or the
 // placeholder, which should not advertise units the switch says are off.
 function refreshReadout() {
+    if (lastForecast) {
+        renderForecast(lastForecast);
+    }
+
     if (lastReading) {
         renderWeather(lastReading);
         return;
@@ -231,6 +357,10 @@ async function loadWeather(query) {
 
         // Only a city the API actually resolved is worth restoring next time
         rememberCity(data.name);
+
+        // Deliberately not awaited: the strip fills itself in a moment later
+        // rather than holding the reading everyone came for.
+        loadForecast(query);
 
     } catch (error) {
         console.error("Error fetching weather data: ", error);
