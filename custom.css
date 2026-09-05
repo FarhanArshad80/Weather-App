@@ -5,8 +5,19 @@
   font-family: 'Poppins', sans-serif;
 }
 
+/* The page dresses itself in the weather it is reporting. Every theme below
+   only redefines these three, so a new sky is a colour change and never a
+   second copy of the layout.
+
+   All of them stay mid-to-dark on purpose: the card's text is white, so a
+   pale "snowy" wash would read as a nicer design right up until nobody could
+   read the temperature. Snow gets a cold steel blue instead of a white one. */
 body {
-  background: linear-gradient(135deg, #1e3c72, #2a5298);
+  --sky-from: #1e3c72;
+  --sky-to: #2a5298;
+  --card-core: #23447e;
+  background: linear-gradient(135deg, var(--sky-from), var(--sky-to));
+  transition: background 0.8s ease-in-out;
   min-height: 100vh;
   display: flex;
   justify-content: center;
@@ -15,6 +26,60 @@ body {
   font-family: 'Poppins', sans-serif;
   overflow-x: hidden;
   overflow-y: auto;
+}
+
+body[data-sky="clear-day"] {
+  --sky-from: #1f6fc4;
+  --sky-to: #4aa3e8;
+  --card-core: #2b7bd0;
+}
+
+body[data-sky="clear-night"] {
+  --sky-from: #131a3d;
+  --sky-to: #2b2f66;
+  --card-core: #212a5c;
+}
+
+body[data-sky="clouds-day"] {
+  --sky-from: #4a5f7d;
+  --sky-to: #7089a6;
+  --card-core: #55708f;
+}
+
+body[data-sky="clouds-night"] {
+  --sky-from: #1c2333;
+  --sky-to: #38445c;
+  --card-core: #2b3549;
+}
+
+body[data-sky="rain-day"] {
+  --sky-from: #33506b;
+  --sky-to: #557f9b;
+  --card-core: #3f6382;
+}
+
+body[data-sky="rain-night"] {
+  --sky-from: #141d2b;
+  --sky-to: #2c3f55;
+  --card-core: #223143;
+}
+
+body[data-sky="storm"] {
+  --sky-from: #241a3b;
+  --sky-to: #43325f;
+  --card-core: #33264e;
+}
+
+body[data-sky="snow"] {
+  --sky-from: #3f5f78;
+  --sky-to: #6e93aa;
+  --card-core: #4e7391;
+}
+
+body[data-sky="mist"] {
+  --sky-from: #3c4450;
+  --sky-to: #6a7480;
+  --card-core: #4c5764;
 }
 
 /* Container with animated glow */
@@ -417,7 +482,8 @@ body {
   position: absolute;
   inset: 6px;
   border-radius: 50%;
-  background: #23447e;
+  background: var(--card-core);
+  transition: background 0.8s ease-in-out;
 }
 
 .air-index {
@@ -636,6 +702,13 @@ body {
   .detail-card,
   .forecast-day,
   .weather-icon {
+    transition: none;
+  }
+
+  /* The sky still changes - it just arrives rather than sweeps. */
+  body,
+  .air-dial,
+  .air-dial::before {
     transition: none;
   }
 }

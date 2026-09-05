@@ -41,6 +41,25 @@ const MAX_RECENT = 5;
 const MAX_FORECAST_DAYS = 5;
 const DAY_NAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
+// OpenWeather groups conditions by the hundreds digit of `weather[0].id`
+// (2xx thunder, 3xx/5xx rain, 6xx snow, 7xx haze, 800 clear, 80x cloud), and
+// the icon name ends in 'd' or 'n' for daylight. Between them that is enough
+// to pick a sky, which CSS then turns into a gradient.
+function skyKey(condition) {
+    if (!condition || typeof condition.id !== 'number') return 'default';
+
+    const suffix = String(condition.icon).endsWith('n') ? 'night' : 'day';
+    const group = Math.floor(condition.id / 100);
+
+    if (group === 2) return 'storm';
+    if (group === 3 || group === 5) return `rain-${suffix}`;
+    if (group === 6) return 'snow';
+    if (group === 7) return 'mist';
+    if (condition.id === 800) return `clear-${suffix}`;
+
+    return `clouds-${suffix}`;
+}
+
 // The air pollution endpoint scores air on a 1-5 scale. A bare number says
 // nothing on its own, so each level carries the wording OpenWeather uses for
 // it and a colour that keeps the same ordering for anyone who reads the dial
@@ -172,6 +191,9 @@ function setLoading(isLoading) {
 function showError(html) {
     hideForecast();
     hideAirQuality();
+
+    // Nothing is being shown, so nothing should be claimed about the sky.
+    document.body.dataset.sky = 'default';
     weatherBox.style.display = 'none';
     weatherDetails.style.display = 'none';
     errorBox.style.display = 'block';
@@ -195,6 +217,8 @@ function renderWeather(data) {
     sunsetEl.innerHTML = clockText(data.sys.sunset, data.timezone);
 
     iconEl.src = `https://openweathermap.org/img/wn/${data.weather[0].icon}@2x.png`;
+
+    document.body.dataset.sky = skyKey(data.weather[0]);
 }
 
 function renderUnitSwitch() {
