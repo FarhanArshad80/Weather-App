@@ -21,6 +21,12 @@ const sunsetEl = document.getElementById('sunset');
 const iconEl = document.getElementById('weather-icon');
 const forecastBox = document.getElementById('forecast');
 const forecastStrip = document.getElementById('forecast-strip');
+const airBox = document.getElementById('air-quality');
+const airDialEl = document.getElementById('air-dial');
+const airIndexEl = document.getElementById('air-index');
+const airLabelEl = document.getElementById('air-label');
+const airPm25El = document.getElementById('air-pm25');
+const airPm10El = document.getElementById('air-pm10');
 
 // Your active API key
 const API_KEY = 'dfa121f8ce06e9d26b31b58ed5795778'; 
@@ -34,6 +40,18 @@ const UNIT_KEY = 'weather-app:units';
 const MAX_RECENT = 5;
 const MAX_FORECAST_DAYS = 5;
 const DAY_NAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+
+// The air pollution endpoint scores air on a 1-5 scale. A bare number says
+// nothing on its own, so each level carries the wording OpenWeather uses for
+// it and a colour that keeps the same ordering for anyone who reads the dial
+// before they read the label.
+const AIR_LEVELS = [
+    { label: 'Good', colour: '#5ad07a' },
+    { label: 'Fair', colour: '#c9e05a' },
+    { label: 'Moderate', colour: '#f2c14e' },
+    { label: 'Poor', colour: '#f0805a' },
+    { label: 'Very poor', colour: '#e05a7a' },
+];
 
 // Readings always come back from the API in metric and are converted here,
 // so switching units redraws the card instead of costing another request.
@@ -153,6 +171,7 @@ function setLoading(isLoading) {
 // Renders a message in the error box and hides any stale weather results
 function showError(html) {
     hideForecast();
+    hideAirQuality();
     weatherBox.style.display = 'none';
     weatherDetails.style.display = 'none';
     errorBox.style.display = 'block';
@@ -296,6 +315,59 @@ async function loadForecast(query) {
     }
 }
 
+// Particle readings are absolute (ug/m3) and do not move with the unit
+// switch, so unlike the strip above this panel is drawn once per lookup and
+// then left alone.
+function renderAirQuality(index, components) {
+    const level = AIR_LEVELS[index - 1];
+
+    if (!level) {
+        hideAirQuality();
+        return;
+    }
+
+    airBox.hidden = false;
+    airDialEl.style.setProperty('--air-colour', level.colour);
+    airDialEl.style.setProperty('--air-fill', `${(index / AIR_LEVELS.length) * 100}%`);
+    airIndexEl.textContent = index;
+    airLabelEl.textContent = level.label;
+    airPm25El.textContent = `${Math.round(components.pm2_5)}`;
+    airPm10El.textContent = `${Math.round(components.pm10)}`;
+}
+
+function hideAirQuality() {
+    airBox.hidden = true;
+}
+
+// Air quality is keyed by coordinates rather than by name, and the weather
+// response already carries them - so this costs no extra lookup to resolve
+// the city. Like the forecast it is an extra: a failure here leaves the
+// reading above it untouched rather than blanking the card.
+async function loadAirQuality(coord) {
+    if (typeof coord?.lat !== 'number' || typeof coord?.lon !== 'number') {
+        hideAirQuality();
+        return;
+    }
+
+    const url = `https://api.openweathermap.org/data/2.5/air_pollution?lat=${coord.lat}&lon=${coord.lon}&appid=${API_KEY}`;
+
+    try {
+        const response = await fetch(url);
+        const data = await response.json();
+        const reading = Array.isArray(data.list) ? data.list[0] : null;
+
+        if (!reading?.main || !reading.components) {
+            hideAirQuality();
+            return;
+        }
+
+        renderAirQuality(reading.main.aqi, reading.components);
+    } catch (error) {
+        console.error('Error fetching air quality data: ', error);
+        hideAirQuality();
+    }
+}
+
 // Redraws whatever the card is currently showing — a real reading, or the
 // placeholder, which should not advertise units the switch says are off.
 function refreshReadout() {
@@ -358,9 +430,10 @@ async function loadWeather(query) {
         // Only a city the API actually resolved is worth restoring next time
         rememberCity(data.name);
 
-        // Deliberately not awaited: the strip fills itself in a moment later
+        // Deliberately not awaited: these fill themselves in a moment later
         // rather than holding the reading everyone came for.
         loadForecast(query);
+        loadAirQuality(data.coord);
 
     } catch (error) {
         console.error("Error fetching weather data: ", error);

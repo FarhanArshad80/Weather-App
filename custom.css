@@ -381,6 +381,75 @@ body {
 }
 
 /* Error Message with animated appearance */
+/* Air quality panel. The dial is a conic sweep whose filled arc and colour
+   both come from the index, so the shape carries the same reading as the
+   wording beside it - the number is never the only thing saying it. */
+.air-quality {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-top: 20px;
+  padding: 16px;
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+}
+
+.air-dial {
+  --air-colour: rgba(255, 255, 255, 0.6);
+  --air-fill: 0%;
+  position: relative;
+  flex-shrink: 0;
+  width: 62px;
+  height: 62px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: conic-gradient(var(--air-colour) var(--air-fill), rgba(255, 255, 255, 0.15) 0);
+  transition: background 0.3s ease-in-out;
+}
+
+/* Punches the ring's hole. A mask would take the number with it, so the
+   hole is a solid disc tinted to sit on the card behind it. */
+.air-dial::before {
+  content: '';
+  position: absolute;
+  inset: 6px;
+  border-radius: 50%;
+  background: #23447e;
+}
+
+.air-index {
+  position: relative;
+  color: #fff;
+  font-size: 1.5rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.air-readout {
+  text-align: left;
+  min-width: 0;
+}
+
+.air-label {
+  color: #fff;
+  font-size: 1.05rem;
+  font-weight: 600;
+}
+
+.air-particles {
+  margin-top: 4px;
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.75);
+}
+
+.air-particles span {
+  color: #fff;
+  font-weight: 600;
+}
+
 .error-box {
   display: none;
   color: #ff4a4a;
