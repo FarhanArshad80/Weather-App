@@ -445,6 +445,24 @@ body[data-sky="mist"] {
   color: rgba(255, 255, 255, 0.6);
 }
 
+/* Chance of rain sits under the range in the blue every umbrella icon uses,
+   so it reads as a different kind of fact from the temperatures above it
+   rather than a third number in the same row. */
+.forecast-rain {
+  margin-top: 4px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: #9fd4ff;
+}
+
+.forecast-rain::before {
+  content: '\f043';
+  font-family: 'Font Awesome 6 Free';
+  font-weight: 900;
+  margin-right: 4px;
+  opacity: 0.85;
+}
+
 /* Error Message with animated appearance */
 /* Air quality panel. The dial is a conic sweep whose filled arc and colour
    both come from the index, so the shape carries the same reading as the

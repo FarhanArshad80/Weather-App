@@ -39,6 +39,9 @@ const LAST_CITY_KEY = 'weather-app:last-city';
 const UNIT_KEY = 'weather-app:units';
 const MAX_RECENT = 5;
 const MAX_FORECAST_DAYS = 5;
+// Below this the forecast is really saying "no", and printing a number for
+// it costs more attention than it gives back.
+const RAIN_CHANCE_FLOOR = 20;
 const DAY_NAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
 // OpenWeather groups conditions by the hundreds digit of `weather[0].id`
@@ -278,10 +281,19 @@ function summariseForecast(data) {
             icon: entry.weather[0].icon,
             description: entry.weather[0].description,
             hoursFromNoon: Infinity,
+            rainChance: 0,
         };
 
         day.min = Math.min(day.min, entry.main.temp_min);
         day.max = Math.max(day.max, entry.main.temp_max);
+
+        // `pop` is the chance of rain in that one three-hour block. Keeping
+        // the highest of the day answers the question people are really
+        // asking - whether to take a coat at all - where an average across
+        // eight blocks would quietly bury a downpour at teatime.
+        if (typeof entry.pop === 'number') {
+            day.rainChance = Math.max(day.rainChance, entry.pop);
+        }
 
         const hoursFromNoon = Math.abs(shifted.getUTCHours() - 12);
 
@@ -330,6 +342,19 @@ function renderForecast(days) {
         range.append(high, low);
 
         tile.append(label, icon, range);
+
+        // A dry day should not carry a "0%" that has to be read before it can
+        // be dismissed; the line is only drawn once rain is worth mentioning.
+        const chance = Math.round(day.rainChance * 100);
+
+        if (chance >= RAIN_CHANCE_FLOOR) {
+            const rain = document.createElement('p');
+            rain.className = 'forecast-rain';
+            rain.textContent = `${chance}%`;
+            rain.title = `${chance}% chance of rain`;
+            tile.appendChild(rain);
+        }
+
         forecastStrip.appendChild(tile);
     });
 }
