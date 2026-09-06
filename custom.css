@@ -243,20 +243,52 @@ body[data-sky="mist"] {
   margin: 0 0 26px;
 }
 
+/* The chip is the pill; the name and the cross inside it are separate
+   buttons, so the padding that used to sit on the chip now sits on the name
+   and the whole pill still lifts as one thing under the cursor. */
 .recent-chip {
+  display: inline-flex;
+  align-items: center;
   background: rgba(255, 255, 255, 0.15);
   border: 1px solid rgba(255, 255, 255, 0.25);
   border-radius: 999px;
-  padding: 6px 14px;
   color: #fff;
   font-size: 0.82rem;
-  cursor: pointer;
+  overflow: hidden;
   transition: background 0.25s, transform 0.2s;
 }
 
 .recent-chip:hover {
   background: rgba(255, 255, 255, 0.3);
   transform: translateY(-2px);
+}
+
+.recent-chip-name,
+.recent-chip-remove {
+  background: none;
+  border: 0;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+.recent-chip-name {
+  padding: 6px 4px 6px 14px;
+}
+
+/* Dimmed until it is wanted: the cross is there to be found, not to compete
+   with the city name beside it. */
+.recent-chip-remove {
+  display: flex;
+  padding: 6px 12px 6px 6px;
+  font-size: 0.72rem;
+  opacity: 0.55;
+  transition: opacity 0.2s;
+}
+
+.recent-chip-remove:hover,
+.recent-chip-remove:focus-visible {
+  opacity: 1;
 }
 
 /* Main Weather Display */

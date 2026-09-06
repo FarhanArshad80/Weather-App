@@ -185,22 +185,53 @@ function rememberCity(city) {
     renderRecent(recent);
 }
 
-// Draws one chip per remembered city; clicking a chip searches it again.
+// Drops one city from the list and redraws. A city typed by mistake, or one
+// nobody needs any more, otherwise sits there until four more searches push
+// it off the end.
+function forgetCity(city) {
+    const remaining = recallCities().filter(
+        (name) => name.toLowerCase() !== city.toLowerCase()
+    );
+
+    try {
+        localStorage.setItem(RECENT_KEY, JSON.stringify(remaining));
+    } catch (error) {
+        /* storage unavailable - the chip still goes for this visit */
+    }
+
+    renderRecent(remaining);
+}
+
+// Draws one chip per remembered city. The chip searches it again; the cross
+// on its right drops it. They are two buttons rather than one so the cross
+// can be reached by keyboard and named for a screen reader, and so a stray
+// click on it never fires the search underneath.
 function renderRecent(cities) {
     recentBox.innerHTML = '';
     recentBox.hidden = cities.length === 0;
 
     cities.forEach((city) => {
-        const chip = document.createElement('button');
-
-        chip.type = 'button';
+        const chip = document.createElement('span');
         chip.className = 'recent-chip';
-        chip.textContent = city;
-        chip.addEventListener('click', () => {
+
+        const search = document.createElement('button');
+        search.type = 'button';
+        search.className = 'recent-chip-name';
+        search.textContent = city;
+        search.addEventListener('click', () => {
             cityInput.value = city;
             checkWeather(city);
         });
 
+        const remove = document.createElement('button');
+        remove.type = 'button';
+        remove.className = 'recent-chip-remove';
+        remove.innerHTML = '<i class="fa-solid fa-xmark"></i>';
+        remove.title = `Remove ${city}`;
+        remove.setAttribute('aria-label', `Remove ${city} from recent searches`);
+        remove.addEventListener('click', () => forgetCity(city));
+
+        chip.append(search, remove);
         recentBox.appendChild(chip);
     });
 }
