@@ -94,11 +94,35 @@ function temperatureText(celsius) {
     return `${Math.round(toTemperature(celsius))}°${units === 'imperial' ? 'F' : 'C'}`;
 }
 
+// Wind direction comes back as degrees clockwise from north, and a bearing
+// like 293 says nothing at a glance. The circle splits into sixteen points
+// of 22.5 degrees each, so rounding the bearing to the nearest of them gives
+// back the name people actually use out loud.
+const COMPASS_POINTS = [
+    'N', 'NNE', 'NE', 'ENE', 'E', 'ESE', 'SE', 'SSE',
+    'S', 'SSW', 'SW', 'WSW', 'W', 'WNW', 'NW', 'NNW',
+];
+
+function compassText(degrees) {
+    if (typeof degrees !== 'number' || Number.isNaN(degrees)) return '';
+
+    // The modulo runs twice so a negative bearing still lands on a real point.
+    const bearing = ((degrees % 360) + 360) % 360;
+
+    return COMPASS_POINTS[Math.round(bearing / 22.5) % COMPASS_POINTS.length];
+}
+
 // The API reports wind in metres per second whatever the units asked for.
-function windText(metresPerSecond) {
-    return units === 'imperial'
+// Direction is named after where the wind blows *from*, which is the
+// convention every forecast uses - a northerly comes down from the north.
+function windText(metresPerSecond, degrees) {
+    const speed = units === 'imperial'
         ? `${Math.round(metresPerSecond * 2.237)} mph`
         : `${Math.round(metresPerSecond * 3.6)} km/h`;
+
+    const bearing = compassText(degrees);
+
+    return bearing ? `${speed} ${bearing}` : speed;
 }
 
 // Sunrise and sunset arrive as UTC epoch seconds, and `timezone` is the
@@ -210,7 +234,7 @@ function renderWeather(data) {
     descEl.innerHTML = data.weather[0].description;
     locEl.innerHTML = `${data.name}, ${data.sys.country}`;
     humidityEl.innerHTML = `${data.main.humidity}%`;
-    windEl.innerHTML = windText(data.wind.speed);
+    windEl.innerHTML = windText(data.wind.speed, data.wind.deg);
     feelsLikeEl.innerHTML = temperatureText(data.main.feels_like);
     pressureEl.innerHTML = `${data.main.pressure} hPa`;
     sunriseEl.innerHTML = clockText(data.sys.sunrise, data.timezone);
