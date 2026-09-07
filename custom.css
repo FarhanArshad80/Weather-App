@@ -566,6 +566,84 @@ body[data-sky="mist"] {
   font-weight: 600;
 }
 
+/* Daylight bar. Sunrise and sunset are already two numbers in the grid
+   above; what they do not answer is where the day currently stands between
+   them. The track is that day drawn end to end, the fill is the part already
+   spent, and the marker is now — so "is it nearly dark there" is a glance
+   rather than a subtraction. */
+.daylight {
+  margin-top: 20px;
+  padding: 16px;
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+}
+
+.daylight-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.daylight-caption {
+  color: #fff;
+  font-size: 0.95rem;
+  font-weight: 600;
+  text-align: left;
+}
+
+.daylight-length {
+  color: rgba(255, 255, 255, 0.75);
+  font-size: 0.8rem;
+  white-space: nowrap;
+}
+
+.daylight-track {
+  position: relative;
+  height: 8px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.daylight-fill {
+  --daylight-progress: 0%;
+  display: block;
+  height: 100%;
+  width: var(--daylight-progress);
+  border-radius: 999px;
+  background: linear-gradient(90deg, #f5b74e, #ffe9a8);
+  transition: width 0.6s ease-in-out;
+}
+
+/* The marker rides the same percentage as the fill and is pulled back by
+   half its own width, so it sits *on* the boundary rather than just after
+   it. It is hidden outside daylight hours - there is no point on the track
+   that honestly describes the middle of the night. */
+.daylight-marker {
+  --daylight-progress: 0%;
+  position: absolute;
+  top: 50%;
+  left: var(--daylight-progress);
+  width: 14px;
+  height: 14px;
+  margin-left: -7px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 0 10px rgba(255, 233, 168, 0.9);
+  transform: translateY(-50%);
+  transition: left 0.6s ease-in-out;
+}
+
+.daylight[data-phase="night"] .daylight-marker {
+  display: none;
+}
+
+.daylight[data-phase="night"] .daylight-fill {
+  background: rgba(255, 255, 255, 0.28);
+}
+
 .error-box {
   display: none;
   color: #ff4a4a;
@@ -751,7 +829,9 @@ body[data-sky="mist"] {
   .weather-container,
   .detail-card,
   .forecast-day,
-  .weather-icon {
+  .weather-icon,
+  .daylight-fill,
+  .daylight-marker {
     transition: none;
   }
 

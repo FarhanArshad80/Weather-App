@@ -27,6 +27,11 @@ const airIndexEl = document.getElementById('air-index');
 const airLabelEl = document.getElementById('air-label');
 const airPm25El = document.getElementById('air-pm25');
 const airPm10El = document.getElementById('air-pm10');
+const daylightBox = document.getElementById('daylight');
+const daylightCaptionEl = document.getElementById('daylight-caption');
+const daylightLengthEl = document.getElementById('daylight-length');
+const daylightFillEl = document.getElementById('daylight-fill');
+const daylightMarkerEl = document.getElementById('daylight-marker');
 
 // Your active API key
 const API_KEY = 'dfa121f8ce06e9d26b31b58ed5795778'; 
@@ -43,6 +48,10 @@ const MAX_FORECAST_DAYS = 5;
 // it costs more attention than it gives back.
 const RAIN_CHANCE_FLOOR = 20;
 const DAY_NAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+const DAY_SECONDS = 24 * 60 * 60;
+// How often the daylight marker catches up with the clock. A minute is finer
+// than the bar can show and still cheap - it is arithmetic, not a request.
+const DAYLIGHT_TICK_MS = 60 * 1000;
 
 // OpenWeather groups conditions by the hundreds digit of `weather[0].id`
 // (2xx thunder, 3xx/5xx rain, 6xx snow, 7xx haze, 800 clear, 80x cloud), and
@@ -141,6 +150,19 @@ function clockText(epochSeconds, offsetSeconds = 0) {
     const suffix = hours < 12 ? 'AM' : 'PM';
 
     return `${hours % 12 || 12}:${minutes} ${suffix}`;
+}
+
+// A gap between two moments, said the way people say it out loud. Seconds
+// are noise at this scale and a bare "218 minutes" has to be divided before
+// it means anything, so anything over an hour is given in hours and minutes.
+function durationText(seconds) {
+    const totalMinutes = Math.max(0, Math.round(seconds / 60));
+    const hours = Math.floor(totalMinutes / 60);
+    const minutes = totalMinutes % 60;
+
+    if (hours === 0) return `${minutes}m`;
+
+    return minutes === 0 ? `${hours}h` : `${hours}h ${minutes}m`;
 }
 
 // Which calendar day a moment falls on depends on where you are standing.
@@ -249,6 +271,7 @@ function setLoading(isLoading) {
 function showError(html) {
     hideForecast();
     hideAirQuality();
+    hideDaylight();
 
     // Nothing is being shown, so nothing should be claimed about the sky.
     document.body.dataset.sky = 'default';
@@ -256,6 +279,53 @@ function showError(html) {
     weatherDetails.style.display = 'none';
     errorBox.style.display = 'block';
     errorBox.innerHTML = html;
+}
+
+// Draws the day as a track from sunrise to sunset with now marked on it.
+// The grid above already gives both times; what it cannot say is how much of
+// the day is left, which is the thing anyone actually plans around. Nothing
+// here is fetched - every figure comes out of the reading already on screen.
+function renderDaylight(data) {
+    const sunrise = data.sys?.sunrise;
+    const sunset = data.sys?.sunset;
+    const length = sunset - sunrise;
+
+    // Inside the polar circles the sun can stay up, or down, for weeks, and
+    // the two timestamps stop bracketing a day at all. There is no honest bar
+    // to draw for that, so the panel steps aside rather than invent one.
+    if (typeof sunrise !== 'number' || typeof sunset !== 'number' || length <= 0) {
+        hideDaylight();
+        return;
+    }
+
+    // The clock, not `data.dt` - a reading a few minutes old should still put
+    // the marker where the sun is now.
+    const now = Date.now() / 1000;
+    const progress = Math.min(Math.max((now - sunrise) / length, 0), 1);
+    const offset = `${progress * 100}%`;
+
+    daylightBox.hidden = false;
+    daylightLengthEl.textContent = `${durationText(length)} of daylight`;
+    daylightFillEl.style.setProperty('--daylight-progress', offset);
+    daylightMarkerEl.style.setProperty('--daylight-progress', offset);
+
+    if (now < sunrise) {
+        daylightBox.dataset.phase = 'night';
+        daylightCaptionEl.textContent = `Sunrise in ${durationText(sunrise - now)}`;
+    } else if (now > sunset) {
+        daylightBox.dataset.phase = 'night';
+        // Today's sunset has gone, so the next sunrise is tomorrow's - and
+        // this response only carries today's. A day on from it is out by a
+        // couple of minutes at most, which the wording already rounds away.
+        daylightCaptionEl.textContent = `Sunrise in ${durationText(sunrise + DAY_SECONDS - now)}`;
+    } else {
+        daylightBox.dataset.phase = 'day';
+        daylightCaptionEl.textContent = `${durationText(sunset - now)} of daylight left`;
+    }
+}
+
+function hideDaylight() {
+    daylightBox.hidden = true;
 }
 
 // Paints one reading into the card using whichever units are selected.
@@ -275,6 +345,8 @@ function renderWeather(data) {
     sunsetEl.innerHTML = clockText(data.sys.sunset, data.timezone);
 
     iconEl.src = `https://openweathermap.org/img/wn/${data.weather[0].icon}@2x.png`;
+
+    renderDaylight(data);
 
     document.body.dataset.sky = skyKey(data.weather[0]);
 }
@@ -607,6 +679,15 @@ cityInput.addEventListener('keydown', (event) => {
         checkWeather(cityInput.value);
     }
 });
+
+// A marker drawn at noon is wrong by the afternoon, and a tab left open all
+// day is the normal way this app gets used. Redrawing on a timer keeps it
+// true without another lookup.
+setInterval(() => {
+    if (lastReading) {
+        renderDaylight(lastReading);
+    }
+}, DAYLIGHT_TICK_MS);
 
 // Bring back the last city that was looked up so a return visit opens on
 // something useful instead of the empty placeholder card.
