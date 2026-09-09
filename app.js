@@ -19,6 +19,9 @@ const pressureEl = document.getElementById('pressure');
 const sunriseEl = document.getElementById('sunrise');
 const sunsetEl = document.getElementById('sunset');
 const iconEl = document.getElementById('weather-icon');
+const hourlyBox = document.getElementById('hourly');
+const hourlyStrip = document.getElementById('hourly-strip');
+const hourlyNoteEl = document.getElementById('hourly-note');
 const forecastBox = document.getElementById('forecast');
 const forecastStrip = document.getElementById('forecast-strip');
 const airBox = document.getElementById('air-quality');
@@ -44,6 +47,11 @@ const LAST_CITY_KEY = 'weather-app:last-city';
 const UNIT_KEY = 'weather-app:units';
 const MAX_RECENT = 5;
 const MAX_FORECAST_DAYS = 5;
+// How far ahead the hourly strip looks. The forecast endpoint answers in
+// three-hour blocks, so six tiles is the next eighteen hours - the rest of
+// today and into tomorrow morning, which is as far as "when should I go out"
+// is ever really asking.
+const MAX_FORECAST_HOURS = 6;
 // Below this the forecast is really saying "no", and printing a number for
 // it costs more attention than it gives back.
 const RAIN_CHANCE_FLOOR = 20;
@@ -89,6 +97,7 @@ const AIR_LEVELS = [
 let units = recallUnits();
 let lastReading = null;
 let lastForecast = null;
+let lastHours = null;
 
 function recallUnits() {
     try {
@@ -412,6 +421,102 @@ function summariseForecast(data) {
     return [...days.values()].slice(0, MAX_FORECAST_DAYS);
 }
 
+// The next few three-hour blocks, taken from the same response the day strip
+// is built from. A five-day outlook answers "what is this week like"; it
+// cannot answer "can I walk to the shops before it starts", which is the
+// question a weather app is usually opened for.
+//
+// Blocks already behind us are dropped. The endpoint returns the window it
+// has, and the first entry can easily have been and gone by the time anyone
+// reads it.
+function summariseHours(data) {
+    const offset = typeof data.city?.timezone === 'number' ? data.city.timezone : 0;
+    const now = Date.now() / 1000;
+
+    return data.list
+        .filter((entry) => entry.dt > now)
+        .slice(0, MAX_FORECAST_HOURS)
+        .map((entry) => ({
+            at: entry.dt,
+            // Labelled in the city's own clock, like every other time on the
+            // card. A block that reads 3 PM should be three in the afternoon
+            // where the weather is, not where the browser is.
+            label: clockText(entry.dt, offset),
+            icon: entry.weather[0].icon,
+            description: entry.weather[0].description,
+            temp: entry.main.temp,
+            rainChance: typeof entry.pop === 'number' ? entry.pop : 0,
+        }));
+}
+
+// The one sentence worth putting above the tiles: when the rain arrives, or
+// that it does not. Reading it off the tiles means comparing six percentages
+// against a threshold, which is work the app can do instead.
+function rainNote(hours) {
+    const soaking = hours.find((hour) => Math.round(hour.rainChance * 100) >= RAIN_CHANCE_FLOOR);
+
+    if (!soaking) return 'Nothing wet expected in the next few hours';
+
+    const chance = Math.round(soaking.rainChance * 100);
+
+    // The first block is not a forecast of something coming, it is now.
+    if (soaking === hours[0]) {
+        return `Rain around now — ${chance}% chance`;
+    }
+
+    return `Rain likely from ${soaking.label} — ${chance}% chance`;
+}
+
+function renderHours(hours) {
+    hourlyStrip.innerHTML = '';
+    hourlyBox.hidden = hours.length === 0;
+
+    if (hours.length === 0) return;
+
+    hourlyNoteEl.textContent = rainNote(hours);
+
+    hours.forEach((hour) => {
+        const tile = document.createElement('div');
+        tile.className = 'hour-tile';
+
+        const label = document.createElement('p');
+        label.className = 'hour-label';
+        label.textContent = hour.label;
+
+        const icon = document.createElement('img');
+        icon.className = 'hour-icon';
+        icon.src = `https://openweathermap.org/img/wn/${hour.icon}.png`;
+        icon.alt = hour.description;
+        icon.title = hour.description;
+
+        const temp = document.createElement('p');
+        temp.className = 'hour-temp';
+        temp.innerHTML = temperatureText(hour.temp);
+
+        tile.append(label, icon, temp);
+
+        // Same rule as the day strip: a dry block should not carry a number
+        // that has to be read before it can be dismissed.
+        const chance = Math.round(hour.rainChance * 100);
+
+        if (chance >= RAIN_CHANCE_FLOOR) {
+            const rain = document.createElement('p');
+            rain.className = 'forecast-rain';
+            rain.textContent = `${chance}%`;
+            rain.title = `${chance}% chance of rain`;
+            tile.appendChild(rain);
+        }
+
+        hourlyStrip.appendChild(tile);
+    });
+}
+
+function hideHours() {
+    lastHours = null;
+    hourlyStrip.innerHTML = '';
+    hourlyBox.hidden = true;
+}
+
 // Draws one tile per upcoming day. Temperatures go through the same
 // converter as the main card, so the unit switch moves the strip with it.
 function renderForecast(days) {
@@ -466,6 +571,9 @@ function hideForecast() {
     lastForecast = null;
     forecastStrip.innerHTML = '';
     forecastBox.hidden = true;
+    // Both strips are drawn from the same response, so a forecast that could
+    // not be read leaves neither of them standing with stale numbers on it.
+    hideHours();
 }
 
 // A second request for a nice-to-have: if it fails the card above it is
@@ -485,6 +593,9 @@ async function loadForecast(query) {
 
         lastForecast = summariseForecast(data);
         renderForecast(lastForecast);
+
+        lastHours = summariseHours(data);
+        renderHours(lastHours);
     } catch (error) {
         console.error('Error fetching forecast data: ', error);
         hideForecast();
@@ -549,6 +660,10 @@ async function loadAirQuality(coord) {
 function refreshReadout() {
     if (lastForecast) {
         renderForecast(lastForecast);
+    }
+
+    if (lastHours) {
+        renderHours(lastHours);
     }
 
     if (lastReading) {

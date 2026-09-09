@@ -495,6 +495,92 @@ body[data-sky="mist"] {
   opacity: 0.85;
 }
 
+/* The next few hours. Sits above the five-day strip because it answers the
+   nearer question, and the two share tile styling so the card reads as one
+   scale getting coarser as it goes down rather than two separate widgets. */
+.hourly {
+  margin-top: 25px;
+  animation: fadeInUp 1s ease forwards;
+}
+
+.hourly-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+
+.hourly-head .forecast-title {
+  margin-bottom: 0;
+}
+
+/* The sentence the tiles are there to support, in the same blue the rain
+   percentages use so the two are read as the same kind of fact. */
+.hourly-note {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #9fd4ff;
+  text-align: right;
+}
+
+.hourly-strip {
+  display: flex;
+  gap: 10px;
+  overflow-x: auto;
+  padding-bottom: 6px;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.35) transparent;
+}
+
+.hourly-strip::-webkit-scrollbar {
+  height: 6px;
+}
+
+.hourly-strip::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.35);
+  border-radius: 999px;
+}
+
+/* Narrower than a day tile and it does not grow to fill the row: six of
+   these stretched across a wide card would each be advertising a single
+   temperature in the space a whole day gets. */
+.hour-tile {
+  flex: 0 0 62px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 16px;
+  padding: 10px 4px;
+  text-align: center;
+  transition: background 0.3s ease, transform 0.3s ease;
+}
+
+.hour-tile:hover {
+  background: rgba(255, 255, 255, 0.2);
+  transform: translateY(-3px);
+}
+
+.hour-label {
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.hour-icon {
+  width: 40px;
+  height: 40px;
+  display: block;
+  margin: 2px auto;
+}
+
+.hour-temp {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #fff;
+}
+
 /* Error Message with animated appearance */
 /* Air quality panel. The dial is a conic sweep whose filled arc and colour
    both come from the index, so the shape carries the same reading as the
