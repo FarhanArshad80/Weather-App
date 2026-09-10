@@ -99,6 +99,22 @@ let lastReading = null;
 let lastForecast = null;
 let lastHours = null;
 
+// Every lookup takes a ticket, and only the newest one is allowed to draw.
+//
+// Three requests go out per lookup and none of them are ordered: search
+// London, change your mind and search Tokyo, and London's reply can easily
+// land second. The card would then show London while the box said Tokyo -
+// and worse, the two panels that fill themselves in afterwards are not
+// awaited at all, so Tokyo's temperature could sit above London's forecast
+// with nothing on screen admitting it.
+let latestLookup = 0;
+
+// Whether the answer that has just come back is still the one being waited
+// for. Anything older is a question the person has already moved on from.
+function isCurrent(ticket) {
+    return ticket === latestLookup;
+}
+
 function recallUnits() {
     try {
         return localStorage.getItem(UNIT_KEY) === 'imperial' ? 'imperial' : 'metric';
@@ -579,12 +595,16 @@ function hideForecast() {
 // A second request for a nice-to-have: if it fails the card above it is
 // still correct, so the strip simply stays out of the way rather than
 // turning a working lookup into an error.
-async function loadForecast(query) {
+async function loadForecast(query, ticket) {
     const url = `https://api.openweathermap.org/data/2.5/forecast?${query}&units=metric&appid=${API_KEY}`;
 
     try {
         const response = await fetch(url);
         const data = await response.json();
+
+        // A forecast for the city before last has nothing to say about the
+        // card it would be drawn under.
+        if (!isCurrent(ticket)) return;
 
         if (String(data.cod) !== '200' || !Array.isArray(data.list)) {
             hideForecast();
@@ -598,7 +618,11 @@ async function loadForecast(query) {
         renderHours(lastHours);
     } catch (error) {
         console.error('Error fetching forecast data: ', error);
-        hideForecast();
+
+        // Only the current lookup may clear the strips. An abandoned request
+        // failing is not a reason to take down panels that belong to the
+        // reading now on screen.
+        if (isCurrent(ticket)) hideForecast();
     }
 }
 
@@ -630,7 +654,7 @@ function hideAirQuality() {
 // response already carries them - so this costs no extra lookup to resolve
 // the city. Like the forecast it is an extra: a failure here leaves the
 // reading above it untouched rather than blanking the card.
-async function loadAirQuality(coord) {
+async function loadAirQuality(coord, ticket) {
     if (typeof coord?.lat !== 'number' || typeof coord?.lon !== 'number') {
         hideAirQuality();
         return;
@@ -641,6 +665,9 @@ async function loadAirQuality(coord) {
     try {
         const response = await fetch(url);
         const data = await response.json();
+
+        if (!isCurrent(ticket)) return;
+
         const reading = Array.isArray(data.list) ? data.list[0] : null;
 
         if (!reading?.main || !reading.components) {
@@ -651,7 +678,8 @@ async function loadAirQuality(coord) {
         renderAirQuality(reading.main.aqi, reading.components);
     } catch (error) {
         console.error('Error fetching air quality data: ', error);
-        hideAirQuality();
+
+        if (isCurrent(ticket)) hideAirQuality();
     }
 }
 
@@ -697,12 +725,17 @@ function setUnits(next) {
 // half of the URL differs, so the response handling lives in one place.
 async function loadWeather(query) {
     const url = `https://api.openweathermap.org/data/2.5/weather?${query}&units=metric&appid=${API_KEY}`;
+    const ticket = ++latestLookup;
 
     setLoading(true);
 
     try {
         const response = await fetch(url);
         const data = await response.json();
+
+        // Someone searched again while this was in the air. Their answer is
+        // the one that matters now, and it may already be on screen.
+        if (!isCurrent(ticket)) return;
 
         // SAFETY CHECK: If response is not successful (anything other than 200)
         if (data.cod !== 200 && data.cod !== "200") {
@@ -723,14 +756,23 @@ async function loadWeather(query) {
 
         // Deliberately not awaited: these fill themselves in a moment later
         // rather than holding the reading everyone came for.
-        loadForecast(query);
-        loadAirQuality(data.coord);
+        // Carrying the ticket, so a panel that arrives after the next search
+        // knows to stay quiet rather than drawing another city's numbers
+        // under this one's temperature.
+        loadForecast(query, ticket);
+        loadAirQuality(data.coord, ticket);
 
     } catch (error) {
         console.error("Error fetching weather data: ", error);
-        showError("<p>Couldn't reach the weather service.<br><small>Check your connection and try again.</small></p>");
+
+        if (isCurrent(ticket)) {
+            showError("<p>Couldn't reach the weather service.<br><small>Check your connection and try again.</small></p>");
+        }
     } finally {
-        setLoading(false);
+        // The spinner belongs to the lookup still running. Switching it off
+        // from an abandoned one leaves the button idle over a search that
+        // has not answered yet.
+        if (isCurrent(ticket)) setLoading(false);
     }
 }
 
