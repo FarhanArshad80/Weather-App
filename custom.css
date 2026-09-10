@@ -264,6 +264,7 @@ body[data-sky="mist"] {
 }
 
 .recent-chip-name,
+.recent-chip-pin,
 .recent-chip-remove {
   background: none;
   border: 0;
@@ -274,6 +275,39 @@ body[data-sky="mist"] {
 
 .recent-chip-name {
   padding: 6px 4px 6px 14px;
+}
+
+/* The pinned chip is stated rather than merely first. Position alone is not
+   a claim - the list is sorted by recency the rest of the time, so leading it
+   would read as "searched most recently" to anyone who had not pinned
+   anything. */
+.recent-chip.is-home {
+  background: rgba(255, 255, 255, 0.28);
+  border-color: rgba(255, 255, 255, 0.55);
+}
+
+.recent-chip-pin {
+  display: flex;
+  padding: 6px 4px;
+  font-size: 0.7rem;
+  opacity: 0.45;
+  transition: opacity 0.2s, transform 0.2s;
+}
+
+.recent-chip-pin:hover,
+.recent-chip-pin:focus-visible {
+  opacity: 1;
+}
+
+/* Upright and solid once it means something, tilted and faint while it is
+   still just an offer. */
+.recent-chip-pin[aria-pressed="true"] {
+  opacity: 1;
+  transform: rotate(0);
+}
+
+.recent-chip-pin[aria-pressed="false"] {
+  transform: rotate(35deg);
 }
 
 /* Dimmed until it is wanted: the cross is there to be found, not to compete

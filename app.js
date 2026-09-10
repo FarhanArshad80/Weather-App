@@ -45,6 +45,11 @@ const API_KEY = 'dfa121f8ce06e9d26b31b58ed5795778';
 const RECENT_KEY = 'weather-app:recent-cities';
 const LAST_CITY_KEY = 'weather-app:last-city';
 const UNIT_KEY = 'weather-app:units';
+// The city this app belongs to. Recents are a history and behave like one -
+// look up a friend's city once and it takes the front of the list, and with
+// it the card that opens on the next visit. A home is a decision, so it is
+// stored apart from the history and outranks it.
+const HOME_KEY = 'weather-app:home';
 const MAX_RECENT = 5;
 const MAX_FORECAST_DAYS = 5;
 // How far ahead the hourly strip looks. The forecast endpoint answers in
@@ -215,6 +220,31 @@ function recallCities() {
     }
 }
 
+function recallHome() {
+    try {
+        const stored = localStorage.getItem(HOME_KEY);
+
+        return typeof stored === 'string' && stored.trim() ? stored : null;
+    } catch (error) {
+        return null;
+    }
+}
+
+// Pinning a city, or unpinning the one already pinned - the same button
+// does both, because a pin is a single fact and there is only ever one.
+function toggleHome(city) {
+    const next = recallHome()?.toLowerCase() === city.toLowerCase() ? null : city;
+
+    try {
+        if (next) localStorage.setItem(HOME_KEY, next);
+        else localStorage.removeItem(HOME_KEY);
+    } catch (error) {
+        /* storage unavailable - the pin holds for this visit and no longer */
+    }
+
+    renderRecent(recallCities());
+}
+
 function rememberCity(city) {
     // Newest first, no duplicates - searching "paris" again should move
     // Paris to the front rather than add a second chip.
@@ -242,6 +272,12 @@ function forgetCity(city) {
 
     try {
         localStorage.setItem(RECENT_KEY, JSON.stringify(remaining));
+
+        // Removing a city removes it entirely. A pin pointing at a chip that
+        // is no longer there would quietly bring it back on the next visit.
+        if (recallHome()?.toLowerCase() === city.toLowerCase()) {
+            localStorage.removeItem(HOME_KEY);
+        }
     } catch (error) {
         /* storage unavailable - the chip still goes for this visit */
     }
@@ -254,12 +290,25 @@ function forgetCity(city) {
 // can be reached by keyboard and named for a screen reader, and so a stray
 // click on it never fires the search underneath.
 function renderRecent(cities) {
+    const home = recallHome();
+
     recentBox.innerHTML = '';
     recentBox.hidden = cities.length === 0;
 
-    cities.forEach((city) => {
+    // The pinned city leads, whatever the history says. It is the one chip
+    // whose position is a decision rather than a side effect of the last
+    // thing typed.
+    const ordered = home
+        ? [
+            ...cities.filter((name) => name.toLowerCase() === home.toLowerCase()),
+            ...cities.filter((name) => name.toLowerCase() !== home.toLowerCase()),
+        ]
+        : cities;
+
+    ordered.forEach((city) => {
+        const pinned = home?.toLowerCase() === city.toLowerCase();
         const chip = document.createElement('span');
-        chip.className = 'recent-chip';
+        chip.className = pinned ? 'recent-chip is-home' : 'recent-chip';
 
         const search = document.createElement('button');
         search.type = 'button';
@@ -270,6 +319,18 @@ function renderRecent(cities) {
             checkWeather(city);
         });
 
+        const pin = document.createElement('button');
+        pin.type = 'button';
+        pin.className = 'recent-chip-pin';
+        pin.innerHTML = '<i class="fa-solid fa-thumbtack"></i>';
+        pin.title = pinned ? `Unpin ${city}` : `Open on ${city} next time`;
+        pin.setAttribute('aria-pressed', String(pinned));
+        pin.setAttribute(
+            'aria-label',
+            pinned ? `Unpin ${city} as your home city` : `Pin ${city} as your home city`
+        );
+        pin.addEventListener('click', () => toggleHome(city));
+
         const remove = document.createElement('button');
         remove.type = 'button';
         remove.className = 'recent-chip-remove';
@@ -278,7 +339,7 @@ function renderRecent(cities) {
         remove.setAttribute('aria-label', `Remove ${city} from recent searches`);
         remove.addEventListener('click', () => forgetCity(city));
 
-        chip.append(search, remove);
+        chip.append(search, pin, remove);
         recentBox.appendChild(chip);
     });
 }
@@ -854,7 +915,11 @@ refreshReadout();
 const recentCities = recallCities();
 renderRecent(recentCities);
 
-if (recentCities.length > 0) {
-    cityInput.value = recentCities[0];
-    checkWeather(recentCities[0]);
+// A pinned city is what this app is for; the most recent search is only
+// where it happened to be left.
+const openingCity = recallHome() || recentCities[0];
+
+if (openingCity) {
+    cityInput.value = openingCity;
+    checkWeather(openingCity);
 }
