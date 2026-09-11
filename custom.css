@@ -365,6 +365,38 @@ body[data-sky="mist"] {
   color: #f0f0f0;
 }
 
+/* The name and the means of sending it, on one line. */
+.location-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+
+/* Faint until wanted, like the cross on a recent chip: the city is what
+   people are here to read, and this sits next to it without competing. */
+.share-btn {
+  border: 0;
+  background: none;
+  padding: 4px;
+  color: rgba(255, 255, 255, 0.55);
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: color 0.2s, transform 0.2s;
+}
+
+.share-btn:hover,
+.share-btn:focus-visible {
+  color: #fff;
+  transform: translateY(-1px);
+}
+
+/* Says the copy happened without moving anything: a button that changes size
+   mid-click drags the heading it sits beside. */
+.share-btn.is-copied {
+  color: #9fe6b0;
+}
+
 .location {
   font-size: 1.5rem;
   font-weight: 600;

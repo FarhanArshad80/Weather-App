@@ -8,6 +8,7 @@ const recentBox = document.getElementById('recent-searches');
 const metricBtn = document.getElementById('unit-metric');
 const imperialBtn = document.getElementById('unit-imperial');
 const locateBtn = document.getElementById('locate-btn');
+const shareBtn = document.getElementById('share-btn');
 
 const tempEl = document.getElementById('temp');
 const descEl = document.getElementById('description');
@@ -50,6 +51,14 @@ const UNIT_KEY = 'weather-app:units';
 // it the card that opens on the next visit. A home is a decision, so it is
 // stored apart from the history and outranks it.
 const HOME_KEY = 'weather-app:home';
+// The city is in the address bar, so a reading can be bookmarked, reloaded
+// or sent to somebody. Without it every link to this app opened on whatever
+// city the recipient last looked at, which is a strange way to answer "is it
+// raining where you are?".
+const CITY_PARAM = 'city';
+// Long enough for "Washington, D.C." and short enough that a hand-edited URL
+// cannot push a paragraph into the search box.
+const MAX_CITY_LENGTH = 80;
 const MAX_RECENT = 5;
 const MAX_FORECAST_DAYS = 5;
 // How far ahead the hourly strip looks. The forecast endpoint answers in
@@ -220,6 +229,56 @@ function recallCities() {
     }
 }
 
+// The city named in the query string, if there is one worth reading. A
+// malformed or empty value falls through to the usual opening city rather
+// than being reported as an error - a bad link should still show weather.
+function cityFromUrl() {
+    try {
+        const asked = new URLSearchParams(window.location.search).get(CITY_PARAM);
+        const city = (asked || '').trim();
+
+        return city && city.length <= MAX_CITY_LENGTH ? city : null;
+    } catch (error) {
+        return null;
+    }
+}
+
+// Writes the city that is actually on screen into the address bar - the name
+// the API resolved, not the spelling that was typed, so a link says Zürich
+// however it was searched for.
+//
+// replaceState rather than pushState: the search box is one place being used
+// over and over, not a sequence of pages. Pressing Back should leave the app,
+// not walk back through six cities somebody was comparing.
+function rememberCityInUrl(city) {
+    try {
+        const url = new URL(window.location.href);
+
+        url.searchParams.set(CITY_PARAM, city);
+        window.history.replaceState(null, '', url.toString());
+
+        shareBtn.hidden = false;
+    } catch (error) {
+        /* history unavailable - the app still works, the link just will not */
+    }
+}
+
+// The clipboard can be refused outright: an insecure context, a denied
+// permission, an older browser. The address bar holds the link either way,
+// so that case says so rather than reporting a failure.
+async function copyCityLink() {
+    const link = window.location.href;
+
+    try {
+        await navigator.clipboard.writeText(link);
+
+        shareBtn.classList.add('is-copied');
+        setTimeout(() => shareBtn.classList.remove('is-copied'), 1600);
+    } catch (error) {
+        window.prompt('Copy this link:', link);
+    }
+}
+
 function recallHome() {
     try {
         const stored = localStorage.getItem(HOME_KEY);
@@ -359,7 +418,9 @@ function showError(html) {
     hideAirQuality();
     hideDaylight();
 
-    // Nothing is being shown, so nothing should be claimed about the sky.
+    // Nothing is being shown, so nothing should be claimed about the sky —
+    // and there is no reading here worth sending anybody a link to.
+    shareBtn.hidden = true;
     document.body.dataset.sky = 'default';
     weatherBox.style.display = 'none';
     weatherDetails.style.display = 'none';
@@ -814,6 +875,7 @@ async function loadWeather(query) {
 
         // Only a city the API actually resolved is worth restoring next time
         rememberCity(data.name);
+        rememberCityInUrl(data.name);
 
         // Deliberately not awaited: these fill themselves in a moment later
         // rather than holding the reading everyone came for.
@@ -888,6 +950,7 @@ searchBtn.addEventListener('click', () => {
 });
 
 locateBtn.addEventListener('click', locateMe);
+shareBtn.addEventListener('click', copyCityLink);
 
 metricBtn.addEventListener('click', () => setUnits('metric'));
 imperialBtn.addEventListener('click', () => setUnits('imperial'));
@@ -915,9 +978,12 @@ refreshReadout();
 const recentCities = recallCities();
 renderRecent(recentCities);
 
-// A pinned city is what this app is for; the most recent search is only
-// where it happened to be left.
-const openingCity = recallHome() || recentCities[0];
+// A link naming a city outranks both: somebody following one asked for that
+// city specifically, and answering with the recipient's own home town would
+// be answering a different question. Below that, a pinned city is what this
+// app is for, and the most recent search is only where it happened to be
+// left.
+const openingCity = cityFromUrl() || recallHome() || recentCities[0];
 
 if (openingCity) {
     cityInput.value = openingCity;
