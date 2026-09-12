@@ -36,6 +36,7 @@ const daylightCaptionEl = document.getElementById('daylight-caption');
 const daylightLengthEl = document.getElementById('daylight-length');
 const daylightFillEl = document.getElementById('daylight-fill');
 const daylightMarkerEl = document.getElementById('daylight-marker');
+const readingAgeEl = document.getElementById('reading-age');
 
 // Your active API key
 const API_KEY = 'dfa121f8ce06e9d26b31b58ed5795778'; 
@@ -74,6 +75,15 @@ const DAY_SECONDS = 24 * 60 * 60;
 // How often the daylight marker catches up with the clock. A minute is finer
 // than the bar can show and still cheap - it is arithmetic, not a request.
 const DAYLIGHT_TICK_MS = 60 * 1000;
+// How old a reading is allowed to get before coming back to the tab fetches
+// it again. OpenWeather updates a city roughly every ten minutes, so asking
+// sooner would spend a request to be told the same numbers; leaving it much
+// longer means a card that quietly describes this morning.
+const STALE_AFTER_MS = 10 * 60 * 1000;
+// Under this the wording stays "just now". A reading a minute old is the
+// current weather by any reading of the word, and "1m ago" invites a person
+// to wonder whether it still counts.
+const FRESH_UNDER_MS = 2 * 60 * 1000;
 
 // OpenWeather groups conditions by the hundreds digit of `weather[0].id`
 // (2xx thunder, 3xx/5xx rain, 6xx snow, 7xx haze, 800 clear, 80x cloud), and
@@ -112,6 +122,14 @@ let units = recallUnits();
 let lastReading = null;
 let lastForecast = null;
 let lastHours = null;
+// When the reading on screen came back, and the query that produced it. The
+// card itself cannot answer either: `data.dt` is when the station measured,
+// not when we asked, and the name in the card has already been through the
+// API once and is not always what should be sent back to it - a lookup by
+// coordinates must refresh by coordinates, or "here" turns into the nearest
+// city the first answer happened to be filed under.
+let lastReadingAt = null;
+let lastQuery = null;
 
 // Every lookup takes a ticket, and only the newest one is allowed to draw.
 //
@@ -419,8 +437,10 @@ function showError(html) {
     hideDaylight();
 
     // Nothing is being shown, so nothing should be claimed about the sky —
-    // and there is no reading here worth sending anybody a link to.
+    // and there is no reading here worth sending anybody a link to, or
+    // dating.
     shareBtn.hidden = true;
+    readingAgeEl.hidden = true;
     document.body.dataset.sky = 'default';
     weatherBox.style.display = 'none';
     weatherDetails.style.display = 'none';
@@ -475,6 +495,28 @@ function hideDaylight() {
     daylightBox.hidden = true;
 }
 
+// How old the reading on screen is, in words. Redrawn on the same minute
+// timer as the daylight marker, so a card left open counts its own age up
+// instead of freezing at whatever it said when it arrived.
+function renderReadingAge() {
+    if (!lastReadingAt) {
+        readingAgeEl.hidden = true;
+        return;
+    }
+
+    const age = Date.now() - lastReadingAt;
+
+    readingAgeEl.hidden = false;
+    readingAgeEl.textContent = age < FRESH_UNDER_MS
+        ? 'Updated just now'
+        : `Updated ${durationText(age / 1000)} ago`;
+
+    // Past the age the app refreshes itself at, the line stops being a
+    // timestamp and starts being a caveat - it only gets this old when a
+    // refresh was tried and did not land, or nobody has been back to the tab.
+    readingAgeEl.classList.toggle('is-stale', age >= STALE_AFTER_MS);
+}
+
 // Paints one reading into the card using whichever units are selected.
 function renderWeather(data) {
     errorBox.style.display = 'none';
@@ -494,6 +536,7 @@ function renderWeather(data) {
     iconEl.src = `https://openweathermap.org/img/wn/${data.weather[0].icon}@2x.png`;
 
     renderDaylight(data);
+    renderReadingAge();
 
     document.body.dataset.sky = skyKey(data.weather[0]);
 }
@@ -871,6 +914,10 @@ async function loadWeather(query) {
         }
 
         lastReading = data;
+        lastReadingAt = Date.now();
+        // Kept as asked, not as answered, so a refresh repeats the same
+        // question - see the note by the declaration.
+        lastQuery = query;
         renderWeather(data);
 
         // Only a city the API actually resolved is worth restoring next time
@@ -967,8 +1014,23 @@ cityInput.addEventListener('keydown', (event) => {
 setInterval(() => {
     if (lastReading) {
         renderDaylight(lastReading);
+        renderReadingAge();
     }
 }, DAYLIGHT_TICK_MS);
+
+// The other half of that problem: the marker can be redrawn from arithmetic,
+// but the temperature cannot. A tab left open since this morning is showing
+// this morning's weather, and coming back to it is exactly the moment
+// somebody reads the number again - so that is the moment to check it is
+// still true. Only then, too: refreshing on a timer would spend requests all
+// day redrawing a card nobody is looking at.
+document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState !== 'visible') return;
+    if (!lastQuery || !lastReadingAt) return;
+    if (Date.now() - lastReadingAt < STALE_AFTER_MS) return;
+
+    loadWeather(lastQuery);
+});
 
 // Bring back the last city that was looked up so a return visit opens on
 // something useful instead of the empty placeholder card.

@@ -397,6 +397,22 @@ body[data-sky="mist"] {
   color: #9fe6b0;
 }
 
+/* Quieter than everything around it. This is a footnote to the temperature,
+   not a reading in its own right - it should be findable when somebody
+   wonders how current the card is and invisible until then. */
+.reading-age {
+  margin: 6px 0 0;
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 0.75rem;
+  letter-spacing: 0.02em;
+}
+
+/* Old enough that the number above it deserves a second look. Warm rather
+   than red: the reading is dated, not wrong. */
+.reading-age.is-stale {
+  color: rgba(255, 214, 140, 0.85);
+}
+
 .location {
   font-size: 1.5rem;
   font-weight: 600;
