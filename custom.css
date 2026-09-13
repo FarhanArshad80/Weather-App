@@ -397,6 +397,15 @@ body[data-sky="mist"] {
   color: #9fe6b0;
 }
 
+/* Directly under the description, because it qualifies the same thing: what
+   it is like outside. Brighter than the reading age below it - this changes
+   what somebody wears, that only says how current the card is. */
+.feels-note {
+  margin: 4px 0 0;
+  color: rgba(255, 255, 255, 0.78);
+  font-size: 0.85rem;
+}
+
 /* Quieter than everything around it. This is a footnote to the temperature,
    not a reading in its own right - it should be findable when somebody
    wonders how current the card is and invisible until then. */

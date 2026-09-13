@@ -37,6 +37,7 @@ const daylightLengthEl = document.getElementById('daylight-length');
 const daylightFillEl = document.getElementById('daylight-fill');
 const daylightMarkerEl = document.getElementById('daylight-marker');
 const readingAgeEl = document.getElementById('reading-age');
+const feelsNoteEl = document.getElementById('feels-note');
 
 // Your active API key
 const API_KEY = 'dfa121f8ce06e9d26b31b58ed5795778'; 
@@ -441,6 +442,7 @@ function showError(html) {
     // dating.
     shareBtn.hidden = true;
     readingAgeEl.hidden = true;
+    feelsNoteEl.hidden = true;
     document.body.dataset.sky = 'default';
     weatherBox.style.display = 'none';
     weatherDetails.style.display = 'none';
@@ -517,6 +519,43 @@ function renderReadingAge() {
     readingAgeEl.classList.toggle('is-stale', age >= STALE_AFTER_MS);
 }
 
+// "Feels like" is a second temperature with no explanation attached. Beside
+// the real one it reads as a contradiction: 8° and feels like 3°, so which
+// is it? OpenWeather derives it from wind chill in the cold and from humidity
+// in the heat, so the reading already holds the reason - it just was not
+// being said.
+//
+// Two degrees Celsius is roughly where the difference starts to decide
+// between a jacket and no jacket. Below that the second number is noise.
+const FEELS_GAP_C = 2;
+// About 15 km/h: a breeze that is felt on the face rather than seen in trees.
+const WINDY_MS = 4;
+const HUMID_PERCENT = 60;
+
+function feelsNote(data) {
+    const actual = data?.main?.temp;
+    const feels = data?.main?.feels_like;
+
+    if (typeof actual !== 'number' || typeof feels !== 'number') return '';
+
+    const gap = feels - actual;
+
+    if (Math.abs(gap) < FEELS_GAP_C) return '';
+
+    // A gap is a difference, not a temperature, so it scales without the
+    // +32 the thermometer reading gets.
+    const degrees = Math.round(Math.abs(gap) * (units === 'imperial' ? 9 / 5 : 1));
+    const colder = gap < 0;
+    const direction = colder ? 'colder' : 'warmer';
+
+    let reason = '';
+
+    if (colder && data.wind?.speed >= WINDY_MS) reason = ' because of the wind';
+    if (!colder && data.main.humidity >= HUMID_PERCENT) reason = ' because of the humidity';
+
+    return `Feels ${degrees}° ${direction} than it is${reason}`;
+}
+
 // Paints one reading into the card using whichever units are selected.
 function renderWeather(data) {
     errorBox.style.display = 'none';
@@ -529,6 +568,10 @@ function renderWeather(data) {
     humidityEl.innerHTML = `${data.main.humidity}%`;
     windEl.innerHTML = windText(data.wind.speed, data.wind.deg);
     feelsLikeEl.innerHTML = temperatureText(data.main.feels_like);
+
+    const note = feelsNote(data);
+    feelsNoteEl.textContent = note;
+    feelsNoteEl.hidden = !note;
     pressureEl.innerHTML = `${data.main.pressure} hPa`;
     sunriseEl.innerHTML = clockText(data.sys.sunrise, data.timezone);
     sunsetEl.innerHTML = clockText(data.sys.sunset, data.timezone);
