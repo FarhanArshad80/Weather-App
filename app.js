@@ -195,6 +195,28 @@ function windText(metresPerSecond, degrees) {
     return bearing ? `${speed} ${bearing}` : speed;
 }
 
+// A steady 15 km/h and gusts of 60 are different days out: one is a breeze,
+// the other takes an umbrella out of a hand and a bin across the road. The
+// reading carries `wind.gust` when there are gusts at all, and the card was
+// showing only the average.
+//
+// Named only when gusts are both strong in themselves and well above the
+// steady wind. A gust of 12 on a wind of 10 is just the wind.
+const GUST_FLOOR_MS = 8; // about 29 km/h, 18 mph
+const GUST_RATIO = 1.5;
+
+function gustText(wind) {
+    const speed = wind?.speed;
+    const gust = wind?.gust;
+
+    if (typeof gust !== 'number' || typeof speed !== 'number') return '';
+    if (gust < GUST_FLOOR_MS || gust < speed * GUST_RATIO) return '';
+
+    return units === 'imperial'
+        ? `gusts ${Math.round(gust * 2.237)} mph`
+        : `gusts ${Math.round(gust * 3.6)} km/h`;
+}
+
 // Sunrise and sunset arrive as UTC epoch seconds, and `timezone` is the
 // city's offset from UTC in seconds. Adding the two and then reading the
 // UTC parts back gives the clock time *there* — 6:41 AM in Tokyo stays
@@ -566,7 +588,16 @@ function renderWeather(data) {
     descEl.innerHTML = data.weather[0].description;
     locEl.innerHTML = `${data.name}, ${data.sys.country}`;
     humidityEl.innerHTML = `${data.main.humidity}%`;
-    windEl.innerHTML = windText(data.wind.speed, data.wind.deg);
+    windEl.textContent = windText(data.wind.speed, data.wind.deg);
+
+    const gusts = gustText(data.wind);
+
+    if (gusts) {
+        const note = document.createElement('small');
+        note.className = 'wind-gust';
+        note.textContent = gusts;
+        windEl.append(note);
+    }
     feelsLikeEl.innerHTML = temperatureText(data.main.feels_like);
 
     const note = feelsNote(data);

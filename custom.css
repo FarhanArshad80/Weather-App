@@ -397,6 +397,16 @@ body[data-sky="mist"] {
   color: #9fe6b0;
 }
 
+/* Under the wind speed, on its own line so the tile keeps its width. Warm,
+   because gusts this strong are the part of the wind worth planning around. */
+.wind-gust {
+  display: block;
+  margin-top: 2px;
+  color: rgba(255, 214, 140, 0.9);
+  font-size: 0.7rem;
+  font-weight: 500;
+}
+
 /* Directly under the description, because it qualifies the same thing: what
    it is like outside. Brighter than the reading age below it - this changes
    what somebody wears, that only says how current the card is. */
