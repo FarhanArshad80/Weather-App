@@ -58,6 +58,9 @@ const HOME_KEY = 'weather-app:home';
 // city the recipient last looked at, which is a strange way to answer "is it
 // raining where you are?".
 const CITY_PARAM = 'city';
+// The last reading that actually arrived, kept so the card has something to
+// say when the network does not.
+const READING_KEY = 'weather-app:last-reading';
 // Long enough for "Washington, D.C." and short enough that a hand-edited URL
 // cannot push a paragraph into the search box.
 const MAX_CITY_LENGTH = 80;
@@ -85,6 +88,11 @@ const STALE_AFTER_MS = 10 * 60 * 1000;
 // current weather by any reading of the word, and "1m ago" invites a person
 // to wonder whether it still counts.
 const FRESH_UNDER_MS = 2 * 60 * 1000;
+// Past this a stored reading stops being weather and becomes a souvenir.
+// Half a day covers opening the app on the morning commute with no signal
+// and still holding last night's numbers; a reading from last week would be
+// worse than the placeholder it replaced, however clearly it were labelled.
+const READING_KEEPS_MS = 12 * 60 * 60 * 1000;
 
 // OpenWeather groups conditions by the hundreds digit of `weather[0].id`
 // (2xx thunder, 3xx/5xx rain, 6xx snow, 7xx haze, 800 clear, 80x cloud), and
@@ -131,6 +139,10 @@ let lastHours = null;
 // city the first answer happened to be filed under.
 let lastReadingAt = null;
 let lastQuery = null;
+// Whether the last attempt to refresh the card failed. The card stays up in
+// that case, so something has to say that the numbers on it are the last
+// ones that arrived rather than the ones that are true now.
+let offline = false;
 
 // Every lookup takes a ticket, and only the newest one is allowed to draw.
 //
@@ -250,6 +262,49 @@ function durationText(seconds) {
 // a 11pm Tokyo reading on the Tokyo day it belongs to.
 function dateKey(epochSeconds, offsetSeconds = 0) {
     return new Date((epochSeconds + offsetSeconds) * 1000).toISOString().slice(0, 10);
+}
+
+// Enough of a reading to draw the card from. Anything stored is a stranger
+// by the time it comes back - written by an older build, hand-edited, or
+// truncated by a browser that ran out of room - and every one of these
+// fields is read without checking during a render.
+function looksLikeReading(data) {
+    return Boolean(
+        data &&
+        typeof data === 'object' &&
+        data.main && typeof data.main.temp === 'number' &&
+        Array.isArray(data.weather) && data.weather[0] &&
+        data.wind && typeof data.wind.speed === 'number' &&
+        data.sys && typeof data.name === 'string'
+    );
+}
+
+// The last reading that arrived, if it is still recent enough to be worth
+// putting on screen. Kept with the query that produced it, because a stored
+// reading is only ever offered back for the city it actually describes.
+function recallReading() {
+    try {
+        const stored = JSON.parse(localStorage.getItem(READING_KEY));
+
+        if (!stored || typeof stored.query !== 'string') return null;
+
+        const at = Number(stored.at);
+
+        if (!Number.isFinite(at) || Date.now() - at > READING_KEEPS_MS) return null;
+        if (!looksLikeReading(stored.data)) return null;
+
+        return { query: stored.query, at, data: stored.data };
+    } catch (error) {
+        return null;
+    }
+}
+
+function saveReading(query, data, at) {
+    try {
+        localStorage.setItem(READING_KEY, JSON.stringify({ query, at, data }));
+    } catch (error) {
+        /* storage unavailable - the card still works, it just starts empty */
+    }
 }
 
 // localStorage throws in private windows and when site data is blocked, so
@@ -531,14 +586,20 @@ function renderReadingAge() {
     const age = Date.now() - lastReadingAt;
 
     readingAgeEl.hidden = false;
-    readingAgeEl.textContent = age < FRESH_UNDER_MS
-        ? 'Updated just now'
-        : `Updated ${durationText(age / 1000)} ago`;
+
+    // With the network gone the line stops being a footnote and becomes the
+    // most important thing on the card: the temperature above it is the last
+    // one that arrived, not the one outside.
+    readingAgeEl.textContent = offline
+        ? `Offline · last updated ${durationText(age / 1000)} ago`
+        : age < FRESH_UNDER_MS
+            ? 'Updated just now'
+            : `Updated ${durationText(age / 1000)} ago`;
 
     // Past the age the app refreshes itself at, the line stops being a
     // timestamp and starts being a caveat - it only gets this old when a
     // refresh was tried and did not land, or nobody has been back to the tab.
-    readingAgeEl.classList.toggle('is-stale', age >= STALE_AFTER_MS);
+    readingAgeEl.classList.toggle('is-stale', offline || age >= STALE_AFTER_MS);
 }
 
 // "Feels like" is a second temperature with no explanation attached. Beside
@@ -989,9 +1050,13 @@ async function loadWeather(query) {
 
         lastReading = data;
         lastReadingAt = Date.now();
+        offline = false;
         // Kept as asked, not as answered, so a refresh repeats the same
         // question - see the note by the declaration.
         lastQuery = query;
+        // Stored under the query rather than the resolved name, so the
+        // reading is only ever offered back for the lookup that produced it.
+        saveReading(query, data, lastReadingAt);
         renderWeather(data);
 
         // Only a city the API actually resolved is worth restoring next time
@@ -1010,7 +1075,21 @@ async function loadWeather(query) {
         console.error("Error fetching weather data: ", error);
 
         if (isCurrent(ticket)) {
-            showError("<p>Couldn't reach the weather service.<br><small>Check your connection and try again.</small></p>");
+            // A failed refresh of the city already on screen is not a reason
+            // to take the city off the screen. Yesterday evening's numbers
+            // for the right place, clearly dated, beat an error message
+            // where the weather used to be - and the reading is still the
+            // answer to "roughly what is it like there".
+            //
+            // Only for the same lookup, though. Someone who searched Tokyo
+            // and got nothing must not be shown London under a caveat: that
+            // is not a stale answer, it is the wrong one.
+            if (lastReading && lastQuery === query) {
+                offline = true;
+                renderReadingAge();
+            } else {
+                showError("<p>Couldn't reach the weather service.<br><small>Check your connection and try again.</small></p>");
+            }
         }
     } finally {
         // The spinner belongs to the lookup still running. Switching it off
@@ -1123,5 +1202,28 @@ const openingCity = cityFromUrl() || recallHome() || recentCities[0];
 
 if (openingCity) {
     cityInput.value = openingCity;
+
+    // Paint the last reading for this city before asking the network for a
+    // new one. On a good connection it is replaced a moment later and nobody
+    // notices; on a bad one it is the difference between opening the app to
+    // the weather and opening it to a row of dashes.
+    const cached = recallReading();
+    const openingQuery = `q=${encodeURIComponent(openingCity.trim())}`;
+
+    if (cached && cached.query === openingQuery) {
+        lastReading = cached.data;
+        lastReadingAt = cached.at;
+        lastQuery = cached.query;
+        // Dated rather than announced as offline. Nothing has failed yet -
+        // the request this is standing in for has not even been sent.
+        renderWeather(cached.data);
+    }
+
     checkWeather(openingCity);
 }
+
+// The connection coming back is the moment the card can stop apologising,
+// and it is a moment nobody should have to notice and act on themselves.
+window.addEventListener('online', () => {
+    if (offline && lastQuery) loadWeather(lastQuery);
+});
