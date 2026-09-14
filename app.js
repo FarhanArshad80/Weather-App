@@ -38,6 +38,7 @@ const daylightFillEl = document.getElementById('daylight-fill');
 const daylightMarkerEl = document.getElementById('daylight-marker');
 const readingAgeEl = document.getElementById('reading-age');
 const feelsNoteEl = document.getElementById('feels-note');
+const localTimeEl = document.getElementById('local-time');
 
 // Your active API key
 const API_KEY = 'dfa121f8ce06e9d26b31b58ed5795778'; 
@@ -242,6 +243,59 @@ function clockText(epochSeconds, offsetSeconds = 0) {
     const suffix = hours < 12 ? 'AM' : 'PM';
 
     return `${hours % 12 || 12}:${minutes} ${suffix}`;
+}
+
+// What time it is where the weather is.
+//
+// Every reading on this card is already local to the city — sunrise, sunset,
+// the hourly strip — but the one number that anchors them was missing, so a
+// sunset at 4:12 PM sat there with no way to tell whether that had already
+// happened. Looking up a friend's city and working out what o'clock it is
+// there is arithmetic nobody should be doing in their head off a UTC offset
+// they cannot see.
+//
+// Empty for anyone reading their own timezone, where the answer is the clock
+// on their own wall and a line repeating it is noise. That is the common
+// case — this app is mostly used on one city — so the line appears exactly
+// when it has something to say.
+function localTimeText(data) {
+    const offset = data?.timezone;
+
+    if (typeof offset !== 'number') return '';
+
+    const now = Date.now() / 1000;
+    // getTimezoneOffset counts minutes *behind* UTC, so the sign is flipped
+    // to match the API, which counts seconds ahead of it.
+    const here = -new Date().getTimezoneOffset() * 60;
+
+    if (offset === here) return '';
+
+    const gap = offset - here;
+    const direction = gap > 0 ? 'ahead' : 'behind';
+    // Not every offset is a whole hour — India is 5:30 off, Nepal 5:45 — so
+    // the gap goes through the same words the daylight figures use.
+    const distance = durationText(Math.abs(gap));
+
+    // The part people actually want on a long hop: whether it is even the
+    // same day there. Only said when it is not, because "Tuesday" against a
+    // Tuesday is a word doing no work.
+    const sameDay = dateKey(now, offset) === dateKey(now, here);
+    const day = sameDay
+        ? ''
+        : `${DAY_NAMES[new Date((now + offset) * 1000).getUTCDay()]}, `;
+
+    return `${day}${clockText(now, offset)} local · ${distance} ${direction}`;
+}
+
+function renderLocalTime(data) {
+    const text = localTimeText(data);
+
+    localTimeEl.textContent = text;
+    localTimeEl.hidden = !text;
+}
+
+function hideLocalTime() {
+    localTimeEl.hidden = true;
 }
 
 // A gap between two moments, said the way people say it out loud. Seconds
@@ -513,6 +567,7 @@ function showError(html) {
     hideForecast();
     hideAirQuality();
     hideDaylight();
+    hideLocalTime();
 
     // Nothing is being shown, so nothing should be claimed about the sky —
     // and there is no reading here worth sending anybody a link to, or
@@ -671,6 +726,7 @@ function renderWeather(data) {
     iconEl.src = `https://openweathermap.org/img/wn/${data.weather[0].icon}@2x.png`;
 
     renderDaylight(data);
+    renderLocalTime(data);
     renderReadingAge();
 
     document.body.dataset.sky = skyKey(data.weather[0]);
@@ -1167,6 +1223,9 @@ cityInput.addEventListener('keydown', (event) => {
 setInterval(() => {
     if (lastReading) {
         renderDaylight(lastReading);
+        // A clock that froze at the minute the card arrived would be worse
+        // than no clock: it looks live and is not.
+        renderLocalTime(lastReading);
         renderReadingAge();
     }
 }, DAYLIGHT_TICK_MS);

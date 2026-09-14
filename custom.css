@@ -416,6 +416,16 @@ body[data-sky="mist"] {
   font-size: 0.85rem;
 }
 
+/* Sits between the city name and the reading's age, and reads as part of the
+   name rather than as another measurement - it says where you are looking,
+   not what the weather is doing. */
+.local-time {
+  margin: 6px 0 0;
+  color: rgba(255, 255, 255, 0.66);
+  font-size: 0.8rem;
+  letter-spacing: 0.02em;
+}
+
 /* Quieter than everything around it. This is a footnote to the temperature,
    not a reading in its own right - it should be findable when somebody
    wonders how current the card is and invisible until then. */
