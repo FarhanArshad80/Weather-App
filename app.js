@@ -36,6 +36,9 @@ const daylightCaptionEl = document.getElementById('daylight-caption');
 const daylightLengthEl = document.getElementById('daylight-length');
 const daylightFillEl = document.getElementById('daylight-fill');
 const daylightMarkerEl = document.getElementById('daylight-marker');
+const visibilityCard = document.getElementById('visibility-card');
+const visibilityEl = document.getElementById('visibility');
+const visibilityLabelEl = document.getElementById('visibility-label');
 const readingAgeEl = document.getElementById('reading-age');
 const feelsNoteEl = document.getElementById('feels-note');
 const localTimeEl = document.getElementById('local-time');
@@ -228,6 +231,65 @@ function gustText(wind) {
     return units === 'imperial'
         ? `gusts ${Math.round(gust * 2.237)} mph`
         : `gusts ${Math.round(gust * 3.6)} km/h`;
+}
+
+// How far it is possible to see, in metres, and the reading carries it on
+// every lookup — it was simply being thrown away.
+//
+// Above this the card stays out of the way. OpenWeather tops the figure out
+// at 10 km and most days sit at the ceiling, so a permanent "10 km" would be
+// a tile that never changes and is never read. Five kilometres is where the
+// Met Office starts calling it mist, and where the number starts deciding
+// something: whether to drive, whether the hill at the end of the road will
+// be there when you look.
+const CLEAR_VISIBILITY_M = 5000;
+// Under a kilometre is fog proper, and the difference between 800 m and 80 m
+// is the whole story — so that range is given in metres rather than rounded
+// into "0.1 km".
+const FOG_M = 1000;
+const METRES_PER_MILE = 1609.34;
+
+// Named the way a forecast names it, so the tile says what is happening and
+// not only how far it reaches.
+function visibilityWord(metres) {
+    if (metres < 200) return 'Dense fog';
+    if (metres < FOG_M) return 'Fog';
+    if (metres < 2000) return 'Mist';
+
+    return 'Haze';
+}
+
+function visibilityText(metres) {
+    if (units === 'imperial') {
+        const miles = metres / METRES_PER_MILE;
+
+        // Same reasoning as the metric side: below a quarter of a mile the
+        // decimal stops carrying the difference, and feet do.
+        return miles < 0.25
+            ? `${Math.round(metres * 3.281 / 10) * 10} ft`
+            : `${miles.toFixed(1)} mi`;
+    }
+
+    return metres < FOG_M
+        ? `${Math.round(metres / 10) * 10} m`
+        : `${(metres / 1000).toFixed(1)} km`;
+}
+
+function renderVisibility(data) {
+    const metres = data?.visibility;
+
+    if (typeof metres !== 'number' || metres >= CLEAR_VISIBILITY_M) {
+        hideVisibility();
+        return;
+    }
+
+    visibilityCard.hidden = false;
+    visibilityEl.textContent = visibilityText(metres);
+    visibilityLabelEl.textContent = visibilityWord(metres);
+}
+
+function hideVisibility() {
+    visibilityCard.hidden = true;
 }
 
 // Sunrise and sunset arrive as UTC epoch seconds, and `timezone` is the
@@ -568,6 +630,7 @@ function showError(html) {
     hideAirQuality();
     hideDaylight();
     hideLocalTime();
+    hideVisibility();
 
     // Nothing is being shown, so nothing should be claimed about the sky —
     // and there is no reading here worth sending anybody a link to, or
@@ -725,6 +788,7 @@ function renderWeather(data) {
 
     iconEl.src = `https://openweathermap.org/img/wn/${data.weather[0].icon}@2x.png`;
 
+    renderVisibility(data);
     renderDaylight(data);
     renderLocalTime(data);
     renderReadingAge();

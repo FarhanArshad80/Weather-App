@@ -483,6 +483,30 @@ body[data-sky="mist"] {
   transform: translateY(-3px);
 }
 
+/* The grid runs in pairs, and the cards that can come and go leave an odd
+   one out when they do. Letting the last card take the whole row reads as a
+   decision rather than a gap left where its partner should have been. */
+.detail-card:last-child:nth-child(odd) {
+  grid-column: 1 / -1;
+}
+
+/* A card that is only ever on screen because something is wrong with the air
+   should not look like the six that are always there. Amber rather than the
+   cyan of the rest, which is exactly the point — it is the tile the eye is
+   meant to find first. */
+.detail-card--warn {
+  background: rgba(242, 193, 78, 0.14);
+  border-color: rgba(242, 193, 78, 0.45);
+}
+
+.detail-card--warn:hover {
+  background: rgba(242, 193, 78, 0.22);
+}
+
+.detail-card--warn i {
+  color: #f2c14e;
+}
+
 .detail-card i {
   font-size: 2rem;
   color: #00ffff;

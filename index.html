@@ -96,6 +96,18 @@
                     <p>Sunset</p>
                 </div>
             </div>
+            <!-- Last, and only when the air is thick enough to change how far
+                 anyone can see. On a clear day "10 km" is the answer every
+                 day and says nothing; in fog it is the one figure on the card
+                 worth reading. Kept below the pairs above so sunrise and
+                 sunset are never split across a row to make space for it. -->
+            <div class="detail-card detail-card--warn" id="visibility-card" hidden>
+                <i class="fa-solid fa-eye-low-vision"></i>
+                <div class="text">
+                    <span id="visibility">--</span>
+                    <p id="visibility-label">Visibility</p>
+                </div>
+            </div>
         </div>
 
         <div class="daylight" id="daylight" aria-label="Daylight" hidden>
