@@ -233,6 +233,43 @@ function gustText(wind) {
         : `gusts ${Math.round(gust * 3.6)} km/h`;
 }
 
+// What the tab said before any city was looked up, kept so the card can put
+// it back when there is nothing to report.
+const BASE_TITLE = document.title;
+
+// The temperature, in the tab.
+//
+// This app gets pinned and left open — the reading-age line and the refresh
+// on returning to the tab both exist because that is how it is used. But a
+// pinned tab is exactly the case where the card cannot be seen at all: the
+// answer is two centimetres from the cursor, behind a click, under a title
+// that has said "Weather-App || Real time updates" since the page loaded.
+//
+// Temperature first because tabs truncate, and hard, and a strip that gets
+// cut to "12° Lon" has still answered the question. The city earns its place
+// beside it — somebody comparing three cities has three tabs, and a row of
+// identical titles is no better than none.
+function renderDocumentTitle(data) {
+    const temp = data?.main?.temp;
+    const name = data?.name;
+
+    if (typeof temp !== 'number' || !name) {
+        resetDocumentTitle();
+        return;
+    }
+
+    // Said in the title rather than shown, because a tab has no room for the
+    // amber line the card uses and a stale number with nothing marking it as
+    // stale is the one failure this is not allowed to have.
+    const caveat = offline ? ' (offline)' : '';
+
+    document.title = `${temperatureText(temp)} ${name}${caveat} · ${BASE_TITLE}`;
+}
+
+function resetDocumentTitle() {
+    document.title = BASE_TITLE;
+}
+
 // How far it is possible to see, in metres, and the reading carries it on
 // every lookup — it was simply being thrown away.
 //
@@ -631,6 +668,7 @@ function showError(html) {
     hideDaylight();
     hideLocalTime();
     hideVisibility();
+    resetDocumentTitle();
 
     // Nothing is being shown, so nothing should be claimed about the sky —
     // and there is no reading here worth sending anybody a link to, or
@@ -788,6 +826,7 @@ function renderWeather(data) {
 
     iconEl.src = `https://openweathermap.org/img/wn/${data.weather[0].icon}@2x.png`;
 
+    renderDocumentTitle(data);
     renderVisibility(data);
     renderDaylight(data);
     renderLocalTime(data);
@@ -1207,6 +1246,10 @@ async function loadWeather(query) {
             if (lastReading && lastQuery === query) {
                 offline = true;
                 renderReadingAge();
+                // The tab is carrying this temperature too, and it has just
+                // stopped being current. Whatever caveat the card takes on,
+                // the title takes with it.
+                renderDocumentTitle(lastReading);
             } else {
                 showError("<p>Couldn't reach the weather service.<br><small>Check your connection and try again.</small></p>");
             }
