@@ -1318,9 +1318,42 @@ shareBtn.addEventListener('click', copyCityLink);
 metricBtn.addEventListener('click', () => setUnits('metric'));
 imperialBtn.addEventListener('click', () => setUnits('imperial'));
 
+// Press "/" to get to the search box from anywhere on the page.
+//
+// This app is one text field and a lot of readings, and the field is the
+// only thing on it anybody types into — but reaching it still meant taking a
+// hand off the keyboard. The slash is the shortcut every search box on the
+// web already answers to, so it needs no explaining.
+//
+// Ignored while something is already being typed into, or the key would land
+// in the box as a character instead of taking you to it. Modifier
+// combinations are left alone too: they belong to the browser.
+document.addEventListener('keydown', (event) => {
+    if (event.key !== '/' || event.ctrlKey || event.metaKey || event.altKey) return;
+
+    const typing = document.activeElement;
+
+    if (typing && (typing.tagName === 'INPUT' || typing.tagName === 'TEXTAREA' || typing.isContentEditable)) {
+        return;
+    }
+
+    event.preventDefault();
+    cityInput.focus();
+    // Selected rather than cleared: the box holds the city on screen, and
+    // somebody reaching for search usually wants a different one, but not
+    // always. Typing replaces it, and an arrow key keeps it.
+    cityInput.select();
+});
+
 cityInput.addEventListener('keydown', (event) => {
     if (event.key === 'Enter') {
         checkWeather(cityInput.value);
+    }
+
+    // The way back out, for anyone who arrived by keyboard and changed
+    // their mind.
+    if (event.key === 'Escape') {
+        cityInput.blur();
     }
 });
 
