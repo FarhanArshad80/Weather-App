@@ -50,7 +50,17 @@
             <!-- A reading is a moment, and this card can sit on screen for
                  hours. Saying how old it is costs one line and stops the
                  temperature being read as current when it is not. -->
-            <p class="reading-age" id="reading-age" hidden>--</p>
+            <p class="reading-age" id="reading-age" hidden>
+                <span id="reading-age-text">--</span>
+                <!-- The refresh lives in this line because this line is what
+                     prompts the question. Reading "updated 3h ago" is the
+                     moment somebody wants newer numbers. -->
+                <button type="button" class="refresh-btn" id="refresh-btn"
+                        title="Check for a newer reading"
+                        aria-label="Check for a newer reading">
+                    <i class="fa-solid fa-rotate-right"></i>
+                </button>
+            </p>
         </div>
 
         <div class="weather-details" id="weather-details">

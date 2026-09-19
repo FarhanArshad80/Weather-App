@@ -40,6 +40,8 @@ const visibilityCard = document.getElementById('visibility-card');
 const visibilityEl = document.getElementById('visibility');
 const visibilityLabelEl = document.getElementById('visibility-label');
 const readingAgeEl = document.getElementById('reading-age');
+const readingAgeTextEl = document.getElementById('reading-age-text');
+const refreshBtn = document.getElementById('refresh-btn');
 const feelsNoteEl = document.getElementById('feels-note');
 const localTimeEl = document.getElementById('local-time');
 
@@ -746,7 +748,7 @@ function renderReadingAge() {
     // With the network gone the line stops being a footnote and becomes the
     // most important thing on the card: the temperature above it is the last
     // one that arrived, not the one outside.
-    readingAgeEl.textContent = offline
+    readingAgeTextEl.textContent = offline
         ? `Offline · last updated ${durationText(age / 1000)} ago`
         : age < FRESH_UNDER_MS
             ? 'Updated just now'
@@ -1142,6 +1144,20 @@ async function loadAirQuality(coord, ticket) {
     }
 }
 
+// Asks for the same city again, now.
+//
+// The card already refreshes itself when the tab comes back to after ten
+// minutes, and when the connection returns — both of which handle the cases
+// the app can see coming. Neither covers the one where somebody is looking
+// at the card, has reason to think the weather has turned, and simply wants
+// to know. Reloading the page was the only answer, and on a flaky
+// connection that trades a dated reading for an empty one.
+function refreshNow() {
+    if (!lastQuery) return;
+
+    loadWeather(lastQuery);
+}
+
 // Redraws whatever the card is currently showing — a real reading, or the
 // placeholder, which should not advertise units the switch says are off.
 function refreshReadout() {
@@ -1313,6 +1329,7 @@ searchBtn.addEventListener('click', () => {
 });
 
 locateBtn.addEventListener('click', locateMe);
+refreshBtn.addEventListener('click', refreshNow);
 shareBtn.addEventListener('click', copyCityLink);
 
 metricBtn.addEventListener('click', () => setUnits('metric'));
