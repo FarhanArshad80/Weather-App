@@ -25,6 +25,7 @@ const hourlyStrip = document.getElementById('hourly-strip');
 const hourlyNoteEl = document.getElementById('hourly-note');
 const forecastBox = document.getElementById('forecast');
 const forecastStrip = document.getElementById('forecast-strip');
+const forecastNoteEl = document.getElementById('forecast-note');
 const airBox = document.getElementById('air-quality');
 const airDialEl = document.getElementById('air-dial');
 const airIndexEl = document.getElementById('air-index');
@@ -80,6 +81,10 @@ const MAX_FORECAST_HOURS = 6;
 // Below this the forecast is really saying "no", and printing a number for
 // it costs more attention than it gives back.
 const RAIN_CHANCE_FLOOR = 20;
+// How big a day-to-day swing in the high has to be before it is worth a
+// sentence, in degrees Celsius. A degree or two either way is the forecast
+// being a forecast; five is the difference between a coat and no coat.
+const TURN_FLOOR_C = 5;
 const DAY_NAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 const DAY_SECONDS = 24 * 60 * 60;
 // How often the daylight marker catches up with the clock. A minute is finer
@@ -994,11 +999,48 @@ function hideHours() {
     hourlyBox.hidden = true;
 }
 
+// The one sentence worth putting above the day tiles: where the week turns.
+// Five highs in a row is a table, and working out which pair of them differ
+// enough to matter is the reading nobody does — so the strip says it.
+//
+// The biggest single step is named rather than the trend across the week.
+// Somebody deciding what to wear on Thursday is served by "Thursday is the
+// cold one", not by an average that describes no day in particular.
+function turnNote(days) {
+    if (days.length < 2) return '';
+
+    let turn = null;
+
+    for (let i = 1; i < days.length; i += 1) {
+        const gap = days[i].max - days[i - 1].max;
+
+        if (!turn || Math.abs(gap) > Math.abs(turn.gap)) {
+            turn = { gap, day: days[i], before: days[i - 1] };
+        }
+    }
+
+    if (!turn || Math.abs(turn.gap) < TURN_FLOOR_C) return '';
+
+    // The gap is a difference, not a temperature, so it is scaled rather than
+    // run through the converter — a five degree rise is nine Fahrenheit, not
+    // forty-one.
+    const degrees = Math.round(Math.abs(turn.gap) * (units === 'imperial' ? 9 / 5 : 1));
+    const warmer = turn.gap > 0;
+
+    return `Turning ${warmer ? 'warmer' : 'colder'} on ${turn.day.label} — ${degrees}° ${
+        warmer ? 'up' : 'down'
+    } on ${turn.before.label}`;
+}
+
 // Draws one tile per upcoming day. Temperatures go through the same
 // converter as the main card, so the unit switch moves the strip with it.
 function renderForecast(days) {
     forecastStrip.innerHTML = '';
     forecastBox.hidden = days.length === 0;
+
+    // Empty rather than a dash when the week is flat: there is no news, and a
+    // placeholder would be something to read before it can be dismissed.
+    forecastNoteEl.textContent = turnNote(days);
 
     days.forEach((day) => {
         const tile = document.createElement('div');
@@ -1047,6 +1089,7 @@ function renderForecast(days) {
 function hideForecast() {
     lastForecast = null;
     forecastStrip.innerHTML = '';
+    forecastNoteEl.textContent = '';
     forecastBox.hidden = true;
     // Both strips are drawn from the same response, so a forecast that could
     // not be read leaves neither of them standing with stale numbers on it.
