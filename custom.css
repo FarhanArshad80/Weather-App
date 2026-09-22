@@ -365,6 +365,25 @@ body[data-sky="mist"] {
   color: #f0f0f0;
 }
 
+/* Directly under the sky description, in the card's quieter weight: the
+   range is context for the big number above it, not a second reading to be
+   compared against it. The arrows carry the meaning at a glance, so the
+   words are left to the tooltip. */
+.today-range {
+  display: flex;
+  justify-content: center;
+  gap: 14px;
+  margin: 0 0 8px;
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.82);
+}
+
+.today-range i {
+  margin-right: 4px;
+  opacity: 0.75;
+}
+
 /* The name and the means of sending it, on one line. */
 .location-row {
   display: flex;

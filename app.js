@@ -44,6 +44,7 @@ const readingAgeEl = document.getElementById('reading-age');
 const readingAgeTextEl = document.getElementById('reading-age-text');
 const refreshBtn = document.getElementById('refresh-btn');
 const feelsNoteEl = document.getElementById('feels-note');
+const todayRangeEl = document.getElementById('today-range');
 const localTimeEl = document.getElementById('local-time');
 
 // Your active API key
@@ -142,6 +143,7 @@ let units = recallUnits();
 let lastReading = null;
 let lastForecast = null;
 let lastHours = null;
+let lastToday = null;
 // When the reading on screen came back, and the query that produced it. The
 // card itself cannot answer either: `data.dt` is when the station measured,
 // not when we asked, and the name in the card has already been through the
@@ -999,6 +1001,76 @@ function hideHours() {
     hourlyBox.hidden = true;
 }
 
+// How warm and how cold it still gets today.
+//
+// The day strip deliberately starts at tomorrow, and the current reading is
+// a single moment, so nothing on the card answers "is this as cold as it
+// gets" — the question behind taking a coat out at four in the afternoon.
+//
+// Only blocks still ahead of us count, and the reading on screen is folded
+// in as the temperature right now. A high the morning already delivered
+// would read as a promise the rest of the day cannot keep.
+function summariseToday(data, currentCelsius) {
+    const offset = typeof data.city?.timezone === 'number' ? data.city.timezone : 0;
+    const now = Date.now() / 1000;
+    const todayKey = dateKey(now, offset);
+
+    const ahead = data.list.filter(
+        (entry) => entry.dt > now && dateKey(entry.dt, offset) === todayKey
+    );
+
+    // Late in the evening there is no rest of today left to describe.
+    if (ahead.length === 0) return null;
+
+    const temps = ahead.flatMap((entry) => [entry.main.temp_min, entry.main.temp_max]);
+
+    if (typeof currentCelsius === 'number') temps.push(currentCelsius);
+
+    return { min: Math.min(...temps), max: Math.max(...temps) };
+}
+
+function renderTodayRange(range) {
+    todayRangeEl.hidden = !range;
+
+    if (!range) return;
+
+    todayRangeEl.innerHTML = '';
+
+    // A high and a low that round to the same number is not a range, it is
+    // the same figure printed twice with two arrows pointing at it.
+    const high = temperatureText(range.max);
+    const low = temperatureText(range.min);
+
+    if (high === low) {
+        const steady = document.createElement('span');
+        steady.title = 'Expected for the rest of today';
+        steady.textContent = `Steady around ${high} today`;
+        todayRangeEl.appendChild(steady);
+        return;
+    }
+
+    [
+        { icon: 'fa-arrow-up', text: high, title: 'Highest expected for the rest of today' },
+        { icon: 'fa-arrow-down', text: low, title: 'Lowest expected for the rest of today' },
+    ].forEach((part) => {
+        const span = document.createElement('span');
+        span.title = part.title;
+
+        const arrow = document.createElement('i');
+        arrow.className = `fa-solid ${part.icon}`;
+        arrow.setAttribute('aria-hidden', 'true');
+
+        span.append(arrow, document.createTextNode(part.text));
+        todayRangeEl.appendChild(span);
+    });
+}
+
+function hideTodayRange() {
+    lastToday = null;
+    todayRangeEl.hidden = true;
+    todayRangeEl.textContent = '';
+}
+
 // The one sentence worth putting above the day tiles: where the week turns.
 // Five highs in a row is a table, and working out which pair of them differ
 // enough to matter is the reading nobody does — so the strip says it.
@@ -1094,6 +1166,7 @@ function hideForecast() {
     // Both strips are drawn from the same response, so a forecast that could
     // not be read leaves neither of them standing with stale numbers on it.
     hideHours();
+    hideTodayRange();
 }
 
 // A second request for a nice-to-have: if it fails the card above it is
@@ -1120,6 +1193,9 @@ async function loadForecast(query, ticket) {
 
         lastHours = summariseHours(data);
         renderHours(lastHours);
+
+        lastToday = summariseToday(data, lastReading?.main?.temp);
+        renderTodayRange(lastToday);
     } catch (error) {
         console.error('Error fetching forecast data: ', error);
 
@@ -1210,6 +1286,10 @@ function refreshReadout() {
 
     if (lastHours) {
         renderHours(lastHours);
+    }
+
+    if (lastToday) {
+        renderTodayRange(lastToday);
     }
 
     if (lastReading) {

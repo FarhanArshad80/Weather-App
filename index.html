@@ -29,6 +29,11 @@
             <img src="https://openweathermap.org/img/wn/10d@2x.png" alt="Weather-Icon" id="weather-icon" class="weather-icon">
             <h1 class="temperature" id="temp">--°C</h1>
             <p class="description" id="description">Search for a city</p>
+            <!-- The day strip below starts at tomorrow, so the one day the
+                 card cannot describe is the one it is about. This is the
+                 rest of today only - the morning low is behind us and
+                 saying it would be a forecast of the past. -->
+            <p class="today-range" id="today-range" hidden>--</p>
             <!-- Only when "feels like" is far enough from the thermometer to
                  change what somebody wears, and then with the reason. -->
             <p class="feels-note" id="feels-note" hidden>--</p>
