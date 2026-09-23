@@ -45,6 +45,7 @@ const readingAgeTextEl = document.getElementById('reading-age-text');
 const refreshBtn = document.getElementById('refresh-btn');
 const feelsNoteEl = document.getElementById('feels-note');
 const todayRangeEl = document.getElementById('today-range');
+const placesEl = document.getElementById('place-picker');
 const localTimeEl = document.getElementById('local-time');
 
 // Your active API key
@@ -144,6 +145,11 @@ let lastReading = null;
 let lastForecast = null;
 let lastHours = null;
 let lastToday = null;
+// The places the last typed name could have meant, and the name that asked.
+// Kept so choosing one of them - which is a lookup by coordinates, and says
+// nothing about any name - does not take the list of alternatives away with
+// it.
+let lastPlaces = [];
 // When the reading on screen came back, and the query that produced it. The
 // card itself cannot answer either: `data.dt` is when the station measured,
 // not when we asked, and the name in the card has already been through the
@@ -672,6 +678,7 @@ function setLoading(isLoading) {
 
 // Renders a message in the error box and hides any stale weather results
 function showError(html) {
+    hidePlaces();
     hideForecast();
     hideAirQuality();
     hideDaylight();
@@ -1206,6 +1213,139 @@ async function loadForecast(query, ticket) {
     }
 }
 
+// How near two sets of coordinates have to be to be the same place, in
+// degrees. The geocoder and the weather endpoint file a city under slightly
+// different points - Cambridge comes back twice from the geocoder alone,
+// a mile apart - so the match has to be loose enough to survive that and
+// tight enough not to confuse two towns in the same county.
+const SAME_PLACE_DEGREES = 0.4;
+
+function samePlace(place, coord) {
+    if (typeof coord?.lat !== 'number' || typeof coord?.lon !== 'number') return false;
+
+    return (
+        Math.abs(place.lat - coord.lat) < SAME_PLACE_DEGREES &&
+        Math.abs(place.lon - coord.lon) < SAME_PLACE_DEGREES
+    );
+}
+
+// "Cambridge, Massachusetts, US". The region is what tells two of them
+// apart, and it is missing often enough - small countries, city states -
+// that it cannot simply be assumed.
+function placeLabel(place) {
+    return [place.name, place.state, place.country].filter(Boolean).join(', ');
+}
+
+// Draws the row, marking whichever entry the card is currently showing.
+//
+// Redrawn after every reading rather than only when the list arrives,
+// because the answer to "which one is this" changes each time one of them is
+// chosen, and the list itself does not.
+function renderPlaces() {
+    placesEl.innerHTML = '';
+    placesEl.hidden = lastPlaces.length < 2;
+
+    if (lastPlaces.length < 2) return;
+
+    const label = document.createElement('p');
+    label.className = 'place-picker-label';
+    label.textContent = `More than one place is called ${lastPlaces[0].name}:`;
+    placesEl.appendChild(label);
+
+    lastPlaces.forEach((place) => {
+        const current = samePlace(place, lastReading?.coord);
+        const chip = document.createElement('button');
+
+        chip.type = 'button';
+        chip.className = current ? 'place-chip is-current' : 'place-chip';
+        chip.textContent = placeLabel(place);
+        chip.disabled = current;
+        chip.title = current ? 'Showing this one' : `Show the weather in ${placeLabel(place)}`;
+
+        // By coordinates, because the name is the thing that was ambiguous.
+        // Asking for "Cambridge" again would land back on whichever one the
+        // API prefers, which is the answer this row exists to get past.
+        chip.addEventListener('click', () => {
+            loadWeather(`lat=${place.lat}&lon=${place.lon}`, { keepPlaces: true });
+        });
+
+        placesEl.appendChild(chip);
+    });
+}
+
+function hidePlaces() {
+    lastPlaces = [];
+    placesEl.innerHTML = '';
+    placesEl.hidden = true;
+}
+
+// Which places answer to the name that was typed.
+//
+// A search for Cambridge has always returned exactly one Cambridge, with no
+// hint that there were three - so somebody in Massachusetts reading 8° and
+// drizzle had no way to tell they were being shown England. The card named
+// the country it settled on, which says what happened but offers no way to
+// change it.
+//
+// Another nice-to-have alongside the forecast: if it fails, the reading
+// above it is still the reading, and the row simply does not appear.
+async function loadPlaces(query, ticket) {
+    const name = new URLSearchParams(query).get('q');
+
+    // A lookup by coordinates has no name to be ambiguous about — and any
+    // row still on screen belongs to a name nobody is looking at any more.
+    if (!name) {
+        hidePlaces();
+        return;
+    }
+
+    const url = `https://api.openweathermap.org/geo/1.0/direct?q=${encodeURIComponent(name)}&limit=5&appid=${API_KEY}`;
+
+    try {
+        const response = await fetch(url);
+        const data = await response.json();
+
+        if (!isCurrent(ticket)) return;
+
+        if (!Array.isArray(data)) {
+            hidePlaces();
+            return;
+        }
+
+        // The geocoder lists the same town more than once - two points a
+        // mile apart, both "Cambridge, England, GB" - and a row offering the
+        // same place twice is worse than no row at all.
+        const seen = new Set();
+        const places = [];
+
+        for (const place of data) {
+            if (!place || typeof place.lat !== 'number' || typeof place.lon !== 'number') continue;
+
+            const key = placeLabel(place).toLowerCase();
+
+            if (seen.has(key)) continue;
+
+            seen.add(key);
+            places.push({
+                name: String(place.name || name),
+                state: typeof place.state === 'string' ? place.state : '',
+                country: typeof place.country === 'string' ? place.country : '',
+                lat: place.lat,
+                lon: place.lon,
+            });
+        }
+
+        // One answer is not a choice, and saying so would turn every
+        // unambiguous search into a row of one chip.
+        lastPlaces = places.length > 1 ? places : [];
+        renderPlaces();
+    } catch (error) {
+        console.error('Error fetching places: ', error);
+
+        if (isCurrent(ticket)) hidePlaces();
+    }
+}
+
 // Particle readings are absolute (ug/m3) and do not move with the unit
 // switch, so unlike the strip above this panel is drawn once per lookup and
 // then left alone.
@@ -1321,7 +1461,12 @@ function setUnits(next) {
 
 // Both the search box and the locate button end up here; only the query
 // half of the URL differs, so the response handling lives in one place.
-async function loadWeather(query) {
+//
+// `keepPlaces` is set by the one caller that is still asking about the same
+// name: picking an alternative from the row of them. Every other lookup by
+// coordinates - the locate button - is a different question, and the row of
+// Cambridges has nothing to say about where you are standing.
+async function loadWeather(query, { keepPlaces = false } = {}) {
     const url = `https://api.openweathermap.org/data/2.5/weather?${query}&units=metric&appid=${API_KEY}`;
     const ticket = ++latestLookup;
 
@@ -1368,6 +1513,11 @@ async function loadWeather(query) {
         // under this one's temperature.
         loadForecast(query, ticket);
         loadAirQuality(data.coord, ticket);
+
+        // Redrawn either way: a kept row still has to move its mark onto
+        // whichever place is now on screen.
+        if (keepPlaces) renderPlaces();
+        else loadPlaces(query, ticket);
 
     } catch (error) {
         console.error("Error fetching weather data: ", error);
@@ -1428,6 +1578,9 @@ function locateMe() {
 
             locateBtn.disabled = false;
             locateBtn.classList.remove('locating');
+            // Without keepPlaces, so a row of Cambridges left over from a
+            // typed search does not sit under the reading for wherever the
+            // browser says you actually are.
             loadWeather(`lat=${latitude}&lon=${longitude}`);
         },
         (error) => {

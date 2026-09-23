@@ -445,6 +445,52 @@ body[data-sky="mist"] {
   letter-spacing: 0.02em;
 }
 
+/* The other places this name could have meant. Chips rather than a select,
+   because there are rarely more than three and each one is a place name that
+   has to be readable at a glance - a closed dropdown would hide the very
+   thing the panel exists to point out. */
+.place-picker {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: 6px;
+  margin: 10px 0 0;
+}
+
+.place-picker-label {
+  width: 100%;
+  margin: 0;
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 0.75rem;
+}
+
+.place-chip {
+  padding: 4px 10px;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.06);
+  color: #fff;
+  font-size: 0.75rem;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background 0.2s ease, border-color 0.2s ease;
+}
+
+.place-chip:hover {
+  background: rgba(255, 255, 255, 0.16);
+  border-color: rgba(255, 255, 255, 0.4);
+}
+
+/* The one already on screen stays in the row rather than being removed from
+   it: taking it out would renumber the list every time somebody switched,
+   and hide the fact that the card is showing one of these at all. */
+.place-chip.is-current {
+  background: rgba(255, 255, 255, 0.22);
+  border-color: rgba(255, 255, 255, 0.5);
+  cursor: default;
+}
+
 /* Quieter than everything around it. This is a footnote to the temperature,
    not a reading in its own right - it should be findable when somebody
    wonders how current the card is and invisible until then. */
