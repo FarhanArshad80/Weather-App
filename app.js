@@ -950,9 +950,15 @@ function rainNote(hours) {
 
     const chance = Math.round(soaking.rainChance * 100);
 
-    // The first block is not a forecast of something coming, it is now.
+    // The first block is not a forecast of something coming, it is now -
+    // and somebody already standing in it wants to know when it ends, not
+    // that it has started. The first dry block after it is the answer; if
+    // there is none in the strip, saying so beats leaving them to count.
     if (soaking === hours[0]) {
-        return `Rain around now — ${chance}% chance`;
+        const dry = hours.find((hour) => Math.round(hour.rainChance * 100) < RAIN_CHANCE_FLOOR);
+        const until = dry ? `, drier from ${dry.label}` : ', with no dry spell in the next few hours';
+
+        return `Rain around now — ${chance}% chance${until}`;
     }
 
     return `Rain likely from ${soaking.label} — ${chance}% chance`;
