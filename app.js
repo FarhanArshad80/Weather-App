@@ -248,6 +248,26 @@ function gustText(wind) {
         : `gusts ${Math.round(gust * 3.6)} km/h`;
 }
 
+// The dew point, worked out from the two figures the reading already has.
+//
+// Relative humidity is relative to the temperature, which makes it a poor
+// answer to "will it be sticky": 90% on a 5° morning is crisp, 60% at 30° is
+// a wet towel. The dew point is the number that actually tracks how muggy
+// air feels, and it is the one forecasters quote for exactly that reason.
+//
+// Magnus formula, with the constants good to a few tenths of a degree across
+// anything a person would stand outside in.
+const MAGNUS_B = 17.62;
+const MAGNUS_C = 243.12;
+
+function dewPointCelsius(celsius, humidity) {
+    if (typeof celsius !== 'number' || typeof humidity !== 'number' || humidity <= 0) return null;
+
+    const gamma = Math.log(humidity / 100) + (MAGNUS_B * celsius) / (MAGNUS_C + celsius);
+
+    return (MAGNUS_C * gamma) / (MAGNUS_B - gamma);
+}
+
 // What the tab said before any city was looked up, kept so the card can put
 // it back when there is nothing to report.
 const BASE_TITLE = document.title;
@@ -820,7 +840,19 @@ function renderWeather(data) {
     tempEl.innerHTML = temperatureText(data.main.temp);
     descEl.innerHTML = data.weather[0].description;
     locEl.innerHTML = `${data.name}, ${data.sys.country}`;
-    humidityEl.innerHTML = `${data.main.humidity}%`;
+    humidityEl.textContent = `${data.main.humidity}%`;
+
+    // Under the percentage, the way gusts sit under the wind: the figure
+    // that says what the one above it means.
+    const dew = dewPointCelsius(data.main.temp, data.main.humidity);
+
+    if (dew !== null) {
+        const note = document.createElement('small');
+        note.className = 'dew-point';
+        note.textContent = `dew point ${temperatureText(dew)}`;
+        note.title = 'The temperature the air would have to cool to for dew to form';
+        humidityEl.append(note);
+    }
     windEl.textContent = windText(data.wind.speed, data.wind.deg);
 
     const gusts = gustText(data.wind);
