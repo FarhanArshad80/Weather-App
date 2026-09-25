@@ -248,6 +248,23 @@ function gustText(wind) {
         : `gusts ${Math.round(gust * 3.6)} km/h`;
 }
 
+// Pressure in the unit the rest of the card is in.
+//
+// The switch turned every temperature and speed into Fahrenheit and miles
+// and left this one tile in hectopascals, which is the unit nobody in the
+// US has on a barometer or hears on a forecast. There it is inches of
+// mercury, and to two places, because a whole inch is roughly the gap
+// between a settled high and a deep storm.
+const INHG_PER_HPA = 0.02953;
+
+function pressureText(hectopascals) {
+    if (typeof hectopascals !== 'number') return units === 'imperial' ? '-- inHg' : '-- hPa';
+
+    return units === 'imperial'
+        ? `${(hectopascals * INHG_PER_HPA).toFixed(2)} inHg`
+        : `${Math.round(hectopascals)} hPa`;
+}
+
 // The dew point, worked out from the two figures the reading already has.
 //
 // Relative humidity is relative to the temperature, which makes it a poor
@@ -868,7 +885,7 @@ function renderWeather(data) {
     const note = feelsNote(data);
     feelsNoteEl.textContent = note;
     feelsNoteEl.hidden = !note;
-    pressureEl.innerHTML = `${data.main.pressure} hPa`;
+    pressureEl.textContent = pressureText(data.main.pressure);
     sunriseEl.innerHTML = clockText(data.sys.sunrise, data.timezone);
     sunsetEl.innerHTML = clockText(data.sys.sunset, data.timezone);
 
@@ -1480,6 +1497,7 @@ function refreshReadout() {
     tempEl.innerHTML = `--°${symbol}`;
     feelsLikeEl.innerHTML = `--°${symbol}`;
     windEl.innerHTML = units === 'imperial' ? '-- mph' : '-- km/h';
+    pressureEl.textContent = pressureText(null);
 }
 
 function setUnits(next) {
