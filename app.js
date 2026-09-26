@@ -1733,14 +1733,17 @@ imperialBtn.addEventListener('click', () => setUnits('imperial'));
 // Ignored while something is already being typed into, or the key would land
 // in the box as a character instead of taking you to it. Modifier
 // combinations are left alone too: they belong to the browser.
-document.addEventListener('keydown', (event) => {
-    if (event.key !== '/' || event.ctrlKey || event.metaKey || event.altKey) return;
-
+function isTyping() {
     const typing = document.activeElement;
 
-    if (typing && (typing.tagName === 'INPUT' || typing.tagName === 'TEXTAREA' || typing.isContentEditable)) {
-        return;
-    }
+    return Boolean(
+        typing && (typing.tagName === 'INPUT' || typing.tagName === 'TEXTAREA' || typing.isContentEditable)
+    );
+}
+
+document.addEventListener('keydown', (event) => {
+    if (event.key !== '/' || event.ctrlKey || event.metaKey || event.altKey) return;
+    if (isTyping()) return;
 
     event.preventDefault();
     cityInput.focus();
@@ -1748,6 +1751,19 @@ document.addEventListener('keydown', (event) => {
     // somebody reaching for search usually wants a different one, but not
     // always. Typing replaces it, and an arrow key keeps it.
     cityInput.select();
+});
+
+// Press "u" to swap °C and °F.
+//
+// Comparing a reading against a friend's "it's 70 out!" means flipping the
+// switch, reading, and flipping it back - three trips to a small pill at the
+// top of the card. The key does it from wherever the eye already is. Same
+// guards as the slash: never while typing, never with a modifier held.
+document.addEventListener('keydown', (event) => {
+    if (event.key.toLowerCase() !== 'u' || event.ctrlKey || event.metaKey || event.altKey) return;
+    if (isTyping()) return;
+
+    setUnits(units === 'imperial' ? 'metric' : 'imperial');
 });
 
 cityInput.addEventListener('keydown', (event) => {
