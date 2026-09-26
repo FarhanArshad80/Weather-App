@@ -1147,6 +1147,8 @@ function summariseToday(data, currentCelsius) {
     return { min: Math.min(...temps), max: Math.max(...temps) };
 }
 
+const FREEZING_C = 0;
+
 function renderTodayRange(range) {
     todayRangeEl.hidden = !range;
 
@@ -1164,13 +1166,28 @@ function renderTodayRange(range) {
         steady.title = 'Expected for the rest of today';
         steady.textContent = `Steady around ${high} today`;
         todayRangeEl.appendChild(steady);
-        return;
     }
 
-    [
+    const parts = high === low ? [] : [
         { icon: 'fa-arrow-up', text: high, title: 'Highest expected for the rest of today' },
         { icon: 'fa-arrow-down', text: low, title: 'Lowest expected for the rest of today' },
-    ].forEach((part) => {
+    ];
+
+    // A low of 1° and a low of -1° look alike as numbers and are different
+    // mornings: one is cold, the other is ice on the windscreen and on the
+    // path. Said only when the freeze is still to come - if it is already
+    // below zero, the big number above says so.
+    const now = lastReading?.main?.temp;
+
+    if (range.min <= FREEZING_C && typeof now === 'number' && now > FREEZING_C) {
+        parts.push({
+            icon: 'fa-snowflake',
+            text: 'Freezing later',
+            title: 'Expected to drop below freezing before the day is out',
+        });
+    }
+
+    parts.forEach((part) => {
         const span = document.createElement('span');
         span.title = part.title;
 
