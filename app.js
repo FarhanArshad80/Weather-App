@@ -912,6 +912,17 @@ function renderWeather(data) {
     }
     windEl.textContent = windText(data.wind.speed, data.wind.deg);
 
+    // "WSW" has to be turned into a direction in the head; an arrow is
+    // already one. It points where the wind is going - the way a flag or a
+    // weather map shows it - so it is the bearing turned half a circle.
+    if (typeof data.wind.deg === 'number') {
+        const arrow = document.createElement('i');
+        arrow.className = 'fa-solid fa-arrow-up wind-arrow';
+        arrow.setAttribute('aria-hidden', 'true');
+        arrow.style.transform = `rotate(${(data.wind.deg + 180) % 360}deg)`;
+        windEl.append(arrow);
+    }
+
     const gusts = gustText(data.wind);
 
     if (gusts) {

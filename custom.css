@@ -438,6 +438,17 @@ body[data-sky="mist"] {
   font-weight: 500;
 }
 
+/* Sized to the text beside it, not to the tile icons - it is part of the
+   reading, not a heading for it. */
+.detail-card .text .wind-arrow {
+  display: inline-block;
+  min-width: 0;
+  margin-left: 6px;
+  font-size: 0.8em;
+  color: inherit;
+  opacity: 0.85;
+}
+
 /* Same place and size as the gust note, but not its amber: a dew point is
    context for the humidity, not a warning about it. */
 .dew-point {
