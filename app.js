@@ -1026,6 +1026,10 @@ function summariseHours(data) {
             description: entry.weather[0].description,
             temp: entry.main.temp,
             rainChance: typeof entry.pop === 'number' ? entry.pop : 0,
+            // `pop` is the chance of anything falling, and the condition
+            // code says what. A 6xx block is snow, and telling somebody to
+            // expect rain is the wrong advice about shoes.
+            snow: Math.floor(entry.weather[0].id / 100) === 6,
         }));
 }
 
@@ -1038,6 +1042,7 @@ function rainNote(hours) {
     if (!soaking) return 'Nothing wet expected in the next few hours';
 
     const chance = Math.round(soaking.rainChance * 100);
+    const word = soaking.snow ? 'Snow' : 'Rain';
 
     // The first block is not a forecast of something coming, it is now -
     // and somebody already standing in it wants to know when it ends, not
@@ -1047,10 +1052,10 @@ function rainNote(hours) {
         const dry = hours.find((hour) => Math.round(hour.rainChance * 100) < RAIN_CHANCE_FLOOR);
         const until = dry ? `, drier from ${dry.label}` : ', with no dry spell in the next few hours';
 
-        return `Rain around now — ${chance}% chance${until}`;
+        return `${word} around now — ${chance}% chance${until}`;
     }
 
-    return `Rain likely from ${soaking.label} — ${chance}% chance`;
+    return `${word} likely from ${soaking.label} — ${chance}% chance`;
 }
 
 function renderHours(hours) {
@@ -1089,7 +1094,7 @@ function renderHours(hours) {
             const rain = document.createElement('p');
             rain.className = 'forecast-rain';
             rain.textContent = `${chance}%`;
-            rain.title = `${chance}% chance of rain`;
+            rain.title = `${chance}% chance of ${hour.snow ? 'snow' : 'rain'}`;
             tile.appendChild(rain);
         }
 
