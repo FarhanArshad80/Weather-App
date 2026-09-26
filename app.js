@@ -285,6 +285,35 @@ function dewPointCelsius(celsius, humidity) {
     return (MAGNUS_C * gamma) / (MAGNUS_B - gamma);
 }
 
+// How much has actually come down in the last hour.
+//
+// "Light rain" is a description of the sky, and it reads the same for a
+// drizzle that barely darkens the pavement and a shower that has filled the
+// gutters. The reading carries the amount in `rain['1h']` or `snow['1h']`
+// whenever there has been any, and it was being thrown away.
+//
+// Below a tenth of a millimetre it is a trace, and saying "0.0 mm" would be a
+// sentence whose only content is that there is nothing to say. Snow is given
+// by the API as the water it would melt to, so it goes through the same units.
+const TRACE_MM = 0.1;
+const MM_PER_INCH = 25.4;
+
+function fallText(data) {
+    const snow = data?.snow?.['1h'];
+    const rain = data?.rain?.['1h'];
+    const [kind, mm] = typeof snow === 'number' && snow >= TRACE_MM
+        ? ['snow', snow]
+        : ['rain', rain];
+
+    if (typeof mm !== 'number' || mm < TRACE_MM) return '';
+
+    const amount = units === 'imperial'
+        ? `${(mm / MM_PER_INCH).toFixed(2)} in`
+        : `${mm.toFixed(1)} mm`;
+
+    return `${amount} of ${kind} in the last hour`;
+}
+
 // What the tab said before any city was looked up, kept so the card can put
 // it back when there is nothing to report.
 const BASE_TITLE = document.title;
@@ -856,6 +885,17 @@ function renderWeather(data) {
 
     tempEl.innerHTML = temperatureText(data.main.temp);
     descEl.innerHTML = data.weather[0].description;
+
+    // Under the description it qualifies, the way the dew point sits under
+    // the humidity.
+    const fall = fallText(data);
+
+    if (fall) {
+        const note = document.createElement('small');
+        note.className = 'fall-note';
+        note.textContent = fall;
+        descEl.append(note);
+    }
     locEl.innerHTML = `${data.name}, ${data.sys.country}`;
     humidityEl.textContent = `${data.main.humidity}%`;
 

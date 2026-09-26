@@ -365,6 +365,18 @@ body[data-sky="mist"] {
   color: #f0f0f0;
 }
 
+/* How much has fallen, under the words for what is falling. Lower case on
+   purpose: the description above is capitalised, and "Mm Of Rain" is not a
+   unit anybody reads. */
+.fall-note {
+  display: block;
+  margin-top: 2px;
+  font-size: 0.8rem;
+  font-weight: 400;
+  text-transform: none;
+  color: rgba(255, 255, 255, 0.75);
+}
+
 /* Directly under the sky description, in the card's quieter weight: the
    range is context for the big number above it, not a second reading to be
    compared against it. The arrows carry the meaning at a glance, so the
