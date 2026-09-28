@@ -1642,6 +1642,11 @@ async function loadWeather(query, { keepPlaces = false } = {}) {
             // Customize error text based on what went wrong
             if (data.cod === 401 || data.cod === "401") {
                 showError("<p>API Key Activation Pending.<br><small>New keys take 1-2 hours to activate. Please try again later!</small></p>");
+            } else if (data.cod === 429 || data.cod === "429") {
+                // The key is shared by everyone using the app, and the free
+                // plan caps calls per minute. The city is fine; the answer is
+                // to wait, not to go checking the spelling.
+                showError("<p>Too many lookups right now.<br><small>Wait a minute and try again.</small></p>");
             } else {
                 showError(notFoundMessage(query));
             }
