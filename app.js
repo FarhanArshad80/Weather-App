@@ -1902,6 +1902,20 @@ document.addEventListener('keydown', (event) => {
     setUnits(units === 'imperial' ? 'metric' : 'imperial');
 });
 
+// Press "r" for a newer reading of the city on screen.
+//
+// The refresh button sits at the end of the small "updated" line, the least
+// reachable spot on the card - and checking again is something people do
+// repeatedly while watching a storm come in. Same guards as the other keys,
+// and ignored while a lookup is still in flight so holding the key down does
+// not send a request per keystroke.
+document.addEventListener('keydown', (event) => {
+    if (event.key.toLowerCase() !== 'r' || event.ctrlKey || event.metaKey || event.altKey) return;
+    if (isTyping() || searchBtn.disabled) return;
+
+    refreshNow();
+});
+
 cityInput.closest('.search-box').addEventListener('animationend', (event) => {
     event.currentTarget.classList.remove('is-empty');
 });
