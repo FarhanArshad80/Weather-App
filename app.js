@@ -1713,9 +1713,26 @@ async function loadWeather(query, { keepPlaces = false } = {}) {
     }
 }
 
+// Pressing search on an empty box used to do nothing at all, which reads as
+// a button that is broken. A shake and the cursor put back in the box says
+// what is missing without a sentence of error text for a blank field.
+function nudgeEmptySearch() {
+    const box = cityInput.closest('.search-box');
+
+    box.classList.remove('is-empty');
+    // Reading a layout property restarts the animation when the button is
+    // pressed twice in a row.
+    void box.offsetWidth;
+    box.classList.add('is-empty');
+    cityInput.focus();
+}
+
 function checkWeather(city) {
     const query = city.trim();
-    if (!query) return;
+    if (!query) {
+        nudgeEmptySearch();
+        return;
+    }
 
     // Names like "New York" or "Washington, D.C." need escaping before they
     // can be dropped into the query string.
@@ -1814,6 +1831,16 @@ document.addEventListener('keydown', (event) => {
     if (isTyping()) return;
 
     setUnits(units === 'imperial' ? 'metric' : 'imperial');
+});
+
+cityInput.closest('.search-box').addEventListener('animationend', (event) => {
+    event.currentTarget.classList.remove('is-empty');
+});
+
+// With reduced motion there is no animation to end, so the outline goes as
+// soon as something is typed instead.
+cityInput.addEventListener('input', () => {
+    cityInput.closest('.search-box').classList.remove('is-empty');
 });
 
 cityInput.addEventListener('keydown', (event) => {
