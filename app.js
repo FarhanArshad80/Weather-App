@@ -765,6 +765,29 @@ function showError(html) {
     errorBox.innerHTML = html;
 }
 
+// Text going into the error box's HTML. The box is written with innerHTML so
+// its messages can carry a line break, which means anything the person typed
+// has to be made harmless before it joins them.
+function escapeHtml(text) {
+    return String(text)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+}
+
+// "City not found" on its own leaves somebody rereading what they typed to
+// work out what went wrong. Repeating the name back shows the typo - "Lodnon"
+// - without them having to look up at the box.
+function notFoundMessage(query) {
+    const name = new URLSearchParams(query).get('q');
+
+    if (!name) return "<p>Oops! City not found. Try again.</p>";
+
+    return `<p>Couldn't find "${escapeHtml(name)}".<br><small>Check the spelling, or add the country: Paris, FR.</small></p>`;
+}
+
 // Draws the day as a track from sunrise to sunset with now marked on it.
 // The grid above already gives both times; what it cannot say is how much of
 // the day is left, which is the thing anyone actually plans around. Nothing
@@ -1620,7 +1643,7 @@ async function loadWeather(query, { keepPlaces = false } = {}) {
             if (data.cod === 401 || data.cod === "401") {
                 showError("<p>API Key Activation Pending.<br><small>New keys take 1-2 hours to activate. Please try again later!</small></p>");
             } else {
-                showError("<p>Oops! City not found. Try again.</p>");
+                showError(notFoundMessage(query));
             }
             return;
         }
