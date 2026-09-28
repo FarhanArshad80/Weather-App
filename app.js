@@ -941,6 +941,11 @@ function renderWeather(data) {
     sunsetEl.innerHTML = clockText(data.sys.sunset, data.timezone);
 
     iconEl.src = `https://openweathermap.org/img/wn/${data.weather[0].icon}@2x.png`;
+    // The hour and day tiles already name their icons; the big one said
+    // "Weather-Icon" whatever the sky was doing, which is what a screen
+    // reader announced and what a broken image left behind.
+    iconEl.alt = data.weather[0].description;
+    iconEl.title = data.weather[0].description;
 
     renderDocumentTitle(data);
     renderVisibility(data);
