@@ -170,7 +170,10 @@
             </div>
         </div>
 
-        <div class="error-box" id="error-box">
+        <!-- An alert, so a screen reader says what went wrong the moment
+             it is written. Otherwise a failed search just went quiet: the
+             card vanished and nothing said why. -->
+        <div class="error-box" id="error-box" role="alert">
             <p>Oops! City not found. Try again</p>
         </div>
     </div>
