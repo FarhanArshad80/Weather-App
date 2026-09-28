@@ -47,6 +47,7 @@ const feelsNoteEl = document.getElementById('feels-note');
 const todayRangeEl = document.getElementById('today-range');
 const placesEl = document.getElementById('place-picker');
 const localTimeEl = document.getElementById('local-time');
+const suggestionsEl = document.getElementById('city-suggestions');
 
 // Your active API key
 const API_KEY = 'dfa121f8ce06e9d26b31b58ed5795778'; 
@@ -683,6 +684,16 @@ function renderRecent(cities) {
 
     recentBox.innerHTML = '';
     recentBox.hidden = cities.length === 0;
+
+    // The same list, offered as the box is typed into. The browser's own
+    // form history is switched off on the input so the two do not disagree
+    // about a city that was removed from the chips.
+    suggestionsEl.innerHTML = '';
+    cities.forEach((city) => {
+        const option = document.createElement('option');
+        option.value = city;
+        suggestionsEl.appendChild(option);
+    });
 
     // The pinned city leads, whatever the history says. It is the one chip
     // whose position is a decision rather than a side effect of the last
