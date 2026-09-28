@@ -1734,9 +1734,31 @@ function checkWeather(city) {
         return;
     }
 
+    const coords = coordinatesIn(query);
+
+    if (coords) return loadWeather(`lat=${coords.lat}&lon=${coords.lon}`);
+
     // Names like "New York" or "Washington, D.C." need escaping before they
     // can be dropped into the query string.
     return loadWeather(`q=${encodeURIComponent(query)}`);
+}
+
+// "51.5074, -0.1278" typed or pasted into the box - the form a map app hands
+// over when you copy a dropped pin. Sent as a name it came back "not found";
+// it is a more exact answer than any city name, so it is looked up as one.
+const COORDINATES = /^(-?\d{1,2}(?:\.\d+)?)\s*[,\s]\s*(-?\d{1,3}(?:\.\d+)?)$/;
+
+function coordinatesIn(text) {
+    const match = COORDINATES.exec(text);
+
+    if (!match) return null;
+
+    const lat = Number(match[1]);
+    const lon = Number(match[2]);
+
+    if (Math.abs(lat) > 90 || Math.abs(lon) > 180) return null;
+
+    return { lat, lon };
 }
 
 // Asking the browser where we are saves typing a city that the API may well
