@@ -781,7 +781,13 @@ function escapeHtml(text) {
 // work out what went wrong. Repeating the name back shows the typo - "Lodnon"
 // - without them having to look up at the box.
 function notFoundMessage(query) {
-    const name = new URLSearchParams(query).get('q');
+    const params = new URLSearchParams(query);
+    const name = params.get('q');
+    const zip = params.get('zip');
+
+    if (zip) {
+        return `<p>Couldn't find postcode "${escapeHtml(zip.split(',')[0])}".<br><small>Check it, or add the country: 10115, DE.</small></p>`;
+    }
 
     if (!name) return "<p>Oops! City not found. Try again.</p>";
 
@@ -1738,9 +1744,33 @@ function checkWeather(city) {
 
     if (coords) return loadWeather(`lat=${coords.lat}&lon=${coords.lon}`);
 
+    const zip = postcodeIn(query);
+
+    if (zip) return loadWeather(`zip=${encodeURIComponent(zip)}`);
+
     // Names like "New York" or "Washington, D.C." need escaping before they
     // can be dropped into the query string.
     return loadWeather(`q=${encodeURIComponent(query)}`);
+}
+
+// A postcode, which is how plenty of people think of where they live - and
+// in the US often the only way to tell apart the dozens of Springfields. The
+// API looks these up with `zip=`, not `q=`; sent as a name they failed.
+//
+// Five bare digits are taken as a US ZIP, which is what the API assumes too.
+// Anything else needs a country code after a comma ("10115, DE") and at
+// least one digit, so "Paris, FR" is still searched as a city.
+const US_ZIP = /^\d{5}$/;
+const POSTCODE = /^([A-Za-z0-9][A-Za-z0-9 -]{1,9}),\s*([A-Za-z]{2})$/;
+
+function postcodeIn(text) {
+    if (US_ZIP.test(text)) return `${text},us`;
+
+    const match = POSTCODE.exec(text);
+
+    if (!match || !/\d/.test(match[1])) return null;
+
+    return `${match[1].trim()},${match[2].toLowerCase()}`;
 }
 
 // "51.5074, -0.1278" typed or pasted into the box - the form a map app hands
