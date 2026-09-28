@@ -1019,6 +1019,7 @@ function summariseForecast(data) {
             description: entry.weather[0].description,
             hoursFromNoon: Infinity,
             rainChance: 0,
+            snow: false,
         };
 
         day.min = Math.min(day.min, entry.main.temp_min);
@@ -1028,8 +1029,13 @@ function summariseForecast(data) {
         // the highest of the day answers the question people are really
         // asking - whether to take a coat at all - where an average across
         // eight blocks would quietly bury a downpour at teatime.
-        if (typeof entry.pop === 'number') {
-            day.rainChance = Math.max(day.rainChance, entry.pop);
+        //
+        // Whatever falls in that wettest block is what the day's chance is
+        // a chance of - the hourly strip already tells snow from rain, and
+        // the day strip was calling a snowy Thursday a rainy one.
+        if (typeof entry.pop === 'number' && entry.pop > day.rainChance) {
+            day.rainChance = entry.pop;
+            day.snow = Math.floor(entry.weather[0].id / 100) === 6;
         }
 
         const hoursFromNoon = Math.abs(shifted.getUTCHours() - 12);
@@ -1319,7 +1325,7 @@ function renderForecast(days) {
             const rain = document.createElement('p');
             rain.className = 'forecast-rain';
             rain.textContent = `${chance}%`;
-            rain.title = `${chance}% chance of rain`;
+            rain.title = `${chance}% chance of ${day.snow ? 'snow' : 'rain'}`;
             tile.appendChild(rain);
         }
 
