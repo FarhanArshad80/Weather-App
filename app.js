@@ -1959,6 +1959,19 @@ document.addEventListener('keydown', (event) => {
     refreshNow();
 });
 
+// Press "l" for the weather where you are.
+//
+// The crosshairs sit at the far end of the search box, and "what is it like
+// here" is the question most visits open with. Same guards as the other
+// keys, and ignored while the browser is still working out the position or
+// a lookup is in flight, so a second press does not stack another prompt.
+document.addEventListener('keydown', (event) => {
+    if (event.key.toLowerCase() !== 'l' || event.ctrlKey || event.metaKey || event.altKey) return;
+    if (isTyping() || locateBtn.disabled || searchBtn.disabled) return;
+
+    locateMe();
+});
+
 cityInput.closest('.search-box').addEventListener('animationend', (event) => {
     event.currentTarget.classList.remove('is-empty');
 });
