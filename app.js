@@ -249,6 +249,38 @@ function gustText(wind) {
         : `gusts ${Math.round(gust * 3.6)} km/h`;
 }
 
+// The wind's name on the Beaufort scale.
+//
+// "22 km/h" is a number that has to be pictured before it means anything, and
+// the same figure reads differently to somebody on a bike and somebody on a
+// bench. "Moderate breeze" is how a forecast says it, and it already carries
+// the picture: dust and loose paper lifting, small branches moving.
+//
+// Upper bounds in metres per second, the unit the API reports in, so the
+// name does not move when the unit switch does.
+const BEAUFORT = [
+    { below: 0.5, name: 'Calm' },
+    { below: 1.6, name: 'Light air' },
+    { below: 3.4, name: 'Light breeze' },
+    { below: 5.5, name: 'Gentle breeze' },
+    { below: 8.0, name: 'Moderate breeze' },
+    { below: 10.8, name: 'Fresh breeze' },
+    { below: 13.9, name: 'Strong breeze' },
+    { below: 17.2, name: 'Near gale' },
+    { below: 20.8, name: 'Gale' },
+    { below: 24.5, name: 'Strong gale' },
+    { below: 28.5, name: 'Storm' },
+    { below: 32.7, name: 'Violent storm' },
+];
+
+function beaufortName(metresPerSecond) {
+    if (typeof metresPerSecond !== 'number' || Number.isNaN(metresPerSecond)) return '';
+
+    const force = BEAUFORT.find((step) => metresPerSecond < step.below);
+
+    return force ? force.name : 'Hurricane force';
+}
+
 // Pressure in the unit the rest of the card is in.
 //
 // The switch turned every temperature and speed into Fahrenheit and miles
@@ -961,6 +993,17 @@ function renderWeather(data) {
         arrow.setAttribute('aria-hidden', 'true');
         arrow.style.transform = `rotate(${(data.wind.deg + 180) % 360}deg)`;
         windEl.append(arrow);
+    }
+
+    // Under the speed and above any gusts: what the steady wind is like
+    // comes before what it occasionally does.
+    const force = beaufortName(data.wind.speed);
+
+    if (force) {
+        const note = document.createElement('small');
+        note.className = 'wind-name';
+        note.textContent = force;
+        windEl.append(note);
     }
 
     const gusts = gustText(data.wind);

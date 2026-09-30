@@ -445,6 +445,16 @@ body[data-sky="mist"] {
   font-weight: 500;
 }
 
+/* The dew point's quiet white rather than the gust amber: a breeze being
+   named is description, and only the gust line is a warning. */
+.wind-name {
+  display: block;
+  margin-top: 2px;
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 0.7rem;
+  font-weight: 500;
+}
+
 /* Sized to the text beside it, not to the tile icons - it is part of the
    reading, not a heading for it. */
 .detail-card .text .wind-arrow {
