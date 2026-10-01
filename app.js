@@ -746,6 +746,7 @@ function renderRecent(cities) {
         search.type = 'button';
         search.className = 'recent-chip-name';
         search.textContent = city;
+        if (pinned) search.title = 'Press H to come back here';
         search.addEventListener('click', () => {
             cityInput.value = city;
             checkWeather(city);
@@ -1970,6 +1971,25 @@ document.addEventListener('keydown', (event) => {
     if (isTyping() || locateBtn.disabled || searchBtn.disabled) return;
 
     locateMe();
+});
+
+// Press "h" to go back to the pinned home city.
+//
+// Looking up somewhere else - where a friend lives, where the weekend is -
+// leaves the card on that city, and getting home again meant finding its
+// chip and clicking it. A pin already says which city is home, so one key
+// can take you there. Same guards as the other keys; with nothing pinned
+// there is no home to go to and the key does nothing.
+document.addEventListener('keydown', (event) => {
+    if (event.key.toLowerCase() !== 'h' || event.ctrlKey || event.metaKey || event.altKey) return;
+    if (isTyping() || searchBtn.disabled) return;
+
+    const home = recallHome();
+
+    if (!home) return;
+
+    cityInput.value = home;
+    checkWeather(home);
 });
 
 cityInput.closest('.search-box').addEventListener('animationend', (event) => {
