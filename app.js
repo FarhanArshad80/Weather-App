@@ -150,6 +150,10 @@ let lastReading = null;
 let lastForecast = null;
 let lastHours = null;
 let lastToday = null;
+// Which way the barometer is heading, worked out once the forecast for the
+// reading on screen has arrived. Null until then, and cleared with every
+// new reading so one city's trend never sits under another's pressure.
+let lastPressureTrend = null;
 // The places the last typed name could have meant, and the name that asked.
 // Kept so choosing one of them - which is a lookup by coordinates, and says
 // nothing about any name - does not take the list of alternatives away with
@@ -300,6 +304,63 @@ function pressureText(hectopascals) {
     return units === 'imperial'
         ? `${(hectopascals * INHG_PER_HPA).toFixed(2)} inHg`
         : `${Math.round(hectopascals)} hPa`;
+}
+
+// Which way the pressure is going, and how far.
+//
+// A single pressure figure means little to anyone who does not read a
+// barometer for a living; the direction is what forecasters have always
+// read from it - falling for unsettled weather on the way, rising for it
+// clearing. The forecast carries a pressure for every block, so the change
+// between now and the end of the hourly strip is already in hand.
+//
+// Three hectopascals is where the change stops being the daily tide in the
+// air and starts saying something about the weather.
+const PRESSURE_TREND_HPA = 3;
+
+// Kept as numbers rather than words so the unit switch can say it again.
+function pressureTrend(current, hours) {
+    if (typeof current !== 'number' || !Array.isArray(hours)) return null;
+
+    const last = [...hours].reverse().find((hour) => typeof hour.pressure === 'number');
+
+    if (!last) return null;
+
+    const change = last.pressure - current;
+
+    if (Math.abs(change) < PRESSURE_TREND_HPA) return null;
+
+    return { change, by: last.label };
+}
+
+function pressureTrendText(trend) {
+    if (!trend) return '';
+
+    // A change, not a reading, so it is scaled from the raw difference
+    // rather than from two rounded figures.
+    const amount = units === 'imperial'
+        ? `${(Math.abs(trend.change) * INHG_PER_HPA).toFixed(2)} inHg`
+        : `${Math.round(Math.abs(trend.change))} hPa`;
+
+    return `${trend.change > 0 ? 'rising' : 'falling'} ${amount} by ${trend.by}`;
+}
+
+// The figure, with the trend under it the way the dew point sits under the
+// humidity.
+function renderPressure(data) {
+    pressureEl.textContent = pressureText(data.main.pressure);
+
+    const trend = pressureTrendText(lastPressureTrend);
+
+    if (!trend) return;
+
+    const note = document.createElement('small');
+    note.className = 'pressure-trend';
+    note.textContent = trend;
+    note.title = lastPressureTrend.change < 0
+        ? 'Falling pressure often means unsettled weather is on the way'
+        : 'Rising pressure often means the weather is settling';
+    pressureEl.append(note);
 }
 
 // The dew point, worked out from the two figures the reading already has.
@@ -1024,7 +1085,7 @@ function renderWeather(data) {
     const note = feelsNote(data);
     feelsNoteEl.textContent = note;
     feelsNoteEl.hidden = !note;
-    pressureEl.textContent = pressureText(data.main.pressure);
+    renderPressure(data);
     sunriseEl.innerHTML = clockText(data.sys.sunrise, data.timezone);
     sunsetEl.innerHTML = clockText(data.sys.sunset, data.timezone);
 
@@ -1142,6 +1203,7 @@ function summariseHours(data) {
             icon: entry.weather[0].icon,
             description: entry.weather[0].description,
             temp: entry.main.temp,
+            pressure: entry.main.pressure,
             rainChance: typeof entry.pop === 'number' ? entry.pop : 0,
             // `pop` is the chance of anything falling, and the condition
             // code says what. A 6xx block is snow, and telling somebody to
@@ -1232,6 +1294,7 @@ function renderHours(hours) {
 
 function hideHours() {
     lastHours = null;
+    lastPressureTrend = null;
     hourlyStrip.innerHTML = '';
     hourlyBox.hidden = true;
 }
@@ -1456,6 +1519,11 @@ async function loadForecast(query, ticket) {
 
         lastHours = summariseHours(data);
         renderHours(lastHours);
+
+        if (lastReading) {
+            lastPressureTrend = pressureTrend(lastReading.main.pressure, lastHours);
+            renderPressure(lastReading);
+        }
 
         lastToday = summariseToday(data, lastReading?.main?.temp);
         renderTodayRange(lastToday);
@@ -1755,6 +1823,8 @@ async function loadWeather(query, { keepPlaces = false } = {}) {
 
         lastReading = data;
         lastReadingAt = Date.now();
+        // Worked out again when this reading's forecast arrives.
+        lastPressureTrend = null;
         offline = false;
         // Kept as asked, not as answered, so a refresh repeats the same
         // question - see the note by the declaration.

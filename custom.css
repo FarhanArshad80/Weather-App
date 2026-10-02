@@ -468,7 +468,8 @@ body[data-sky="mist"] {
 
 /* Same place and size as the gust note, but not its amber: a dew point is
    context for the humidity, not a warning about it. */
-.dew-point {
+.dew-point,
+.pressure-trend {
   display: block;
   margin-top: 2px;
   color: rgba(255, 255, 255, 0.7);
