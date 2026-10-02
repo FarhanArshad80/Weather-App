@@ -1136,7 +1136,17 @@ function summariseHours(data) {
             // code says what. A 6xx block is snow, and telling somebody to
             // expect rain is the wrong advice about shoes.
             snow: Math.floor(entry.weather[0].id / 100) === 6,
+            // A 2xx block is thunder. "Rain likely from 4 PM" sends somebody
+            // out with an umbrella; a storm is the one forecast that should
+            // keep them off the golf course and out from under trees.
+            storm: Math.floor(entry.weather[0].id / 100) === 2,
         }));
+}
+
+// What is falling in a block, as the noun the sentences above the tiles use.
+function fallWord(hour) {
+    if (hour.storm) return 'thunderstorms';
+    return hour.snow ? 'snow' : 'rain';
 }
 
 // The one sentence worth putting above the tiles: when the rain arrives, or
@@ -1148,7 +1158,8 @@ function rainNote(hours) {
     if (!soaking) return 'Nothing wet expected in the next few hours';
 
     const chance = Math.round(soaking.rainChance * 100);
-    const word = soaking.snow ? 'Snow' : 'Rain';
+    const kind = fallWord(soaking);
+    const word = kind.charAt(0).toUpperCase() + kind.slice(1);
 
     // The first block is not a forecast of something coming, it is now -
     // and somebody already standing in it wants to know when it ends, not
@@ -1200,7 +1211,7 @@ function renderHours(hours) {
             const rain = document.createElement('p');
             rain.className = 'forecast-rain';
             rain.textContent = `${chance}%`;
-            rain.title = `${chance}% chance of ${hour.snow ? 'snow' : 'rain'}`;
+            rain.title = `${chance}% chance of ${fallWord(hour)}`;
             tile.appendChild(rain);
         }
 
