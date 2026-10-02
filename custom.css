@@ -745,6 +745,23 @@ body[data-sky="mist"] {
   opacity: 0.85;
 }
 
+/* The gust amber, because a windy day is a caveat on the tile in the same
+   way gusts are a caveat on the wind card. */
+.forecast-wind {
+  margin-top: 4px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: rgba(255, 214, 140, 0.9);
+}
+
+.forecast-wind::before {
+  content: '\f72e';
+  font-family: 'Font Awesome 6 Free';
+  font-weight: 900;
+  margin-right: 4px;
+  opacity: 0.85;
+}
+
 /* The next few hours. Sits above the five-day strip because it answers the
    nearer question, and the two share tile styling so the card reads as one
    scale getting coarser as it goes down rather than two separate widgets. */

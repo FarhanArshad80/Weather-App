@@ -88,6 +88,10 @@ const RAIN_CHANCE_FLOOR = 20;
 // sentence, in degrees Celsius. A degree or two either way is the forecast
 // being a forecast; five is the difference between a coat and no coat.
 const TURN_FLOOR_C = 5;
+// How hard the wind has to blow before a day tile says so, in metres per
+// second. This is a strong breeze on the Beaufort scale - about 39 km/h,
+// 24 mph - where umbrellas turn inside out and cycling into it is work.
+const WINDY_DAY_MS = 10.8;
 const DAY_NAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 const DAY_SECONDS = 24 * 60 * 60;
 // How often the daylight marker catches up with the clock. A minute is finer
@@ -1075,6 +1079,7 @@ function summariseForecast(data) {
             hoursFromNoon: Infinity,
             rainChance: 0,
             snow: false,
+            maxWind: 0,
         };
 
         day.min = Math.min(day.min, entry.main.temp_min);
@@ -1091,6 +1096,12 @@ function summariseForecast(data) {
         if (typeof entry.pop === 'number' && entry.pop > day.rainChance) {
             day.rainChance = entry.pop;
             day.snow = Math.floor(entry.weather[0].id / 100) === 6;
+        }
+
+        // The strongest steady wind of the day, for the same reason as the
+        // rain: one blustery afternoon is what the day gets remembered for.
+        if (typeof entry.wind?.speed === 'number') {
+            day.maxWind = Math.max(day.maxWind, entry.wind.speed);
         }
 
         const hoursFromNoon = Math.abs(shifted.getUTCHours() - 12);
@@ -1393,6 +1404,17 @@ function renderForecast(days) {
             rain.textContent = `${chance}%`;
             rain.title = `${chance}% chance of ${day.snow ? 'snow' : 'rain'}`;
             tile.appendChild(rain);
+        }
+
+        // A dry, mild Wednesday with a gale blowing is not the easy day its
+        // icon and temperatures promise. Only drawn once the wind is strong
+        // enough to change plans, so a calm week stays uncluttered.
+        if (day.maxWind >= WINDY_DAY_MS) {
+            const wind = document.createElement('p');
+            wind.className = 'forecast-wind';
+            wind.textContent = windText(day.maxWind);
+            wind.title = `${beaufortName(day.maxWind)} at its strongest`;
+            tile.appendChild(wind);
         }
 
         forecastStrip.appendChild(tile);
