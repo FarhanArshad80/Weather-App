@@ -1140,6 +1140,7 @@ function summariseForecast(data) {
             hoursFromNoon: Infinity,
             rainChance: 0,
             snow: false,
+            storm: false,
             maxWind: 0,
         };
 
@@ -1153,10 +1154,12 @@ function summariseForecast(data) {
         //
         // Whatever falls in that wettest block is what the day's chance is
         // a chance of - the hourly strip already tells snow from rain, and
-        // the day strip was calling a snowy Thursday a rainy one.
+        // the day strip was calling a snowy Thursday a rainy one. A 2xx block
+        // is thunder, and a stormy Friday should not read as a wet one.
         if (typeof entry.pop === 'number' && entry.pop > day.rainChance) {
             day.rainChance = entry.pop;
             day.snow = Math.floor(entry.weather[0].id / 100) === 6;
+            day.storm = Math.floor(entry.weather[0].id / 100) === 2;
         }
 
         // The strongest steady wind of the day, for the same reason as the
@@ -1465,7 +1468,7 @@ function renderForecast(days) {
             const rain = document.createElement('p');
             rain.className = 'forecast-rain';
             rain.textContent = `${chance}%`;
-            rain.title = `${chance}% chance of ${day.snow ? 'snow' : 'rain'}`;
+            rain.title = `${chance}% chance of ${fallWord(day)}`;
             tile.appendChild(rain);
         }
 
