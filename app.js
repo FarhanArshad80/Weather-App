@@ -412,6 +412,18 @@ function fallText(data) {
     return `${amount} of ${kind} in the last hour`;
 }
 
+// "Scattered clouds" and "broken clouds" are terms of art that few people
+// can put a number to. The share of sky covered is one, and it is only added
+// when the description is about cloud, so a clear sky stays a clear sky.
+function cloudText(data) {
+    const cover = data?.clouds?.all;
+    const sky = data?.weather?.[0]?.description ?? '';
+
+    if (typeof cover !== 'number' || !/cloud/i.test(sky)) return '';
+
+    return `${Math.round(cover)}% of the sky covered`;
+}
+
 // What the tab said before any city was looked up, kept so the card can put
 // it back when there is nothing to report.
 const BASE_TITLE = document.title;
@@ -1032,6 +1044,15 @@ function renderWeather(data) {
         const note = document.createElement('small');
         note.className = 'fall-note';
         note.textContent = fall;
+        descEl.append(note);
+    }
+
+    const cloud = cloudText(data);
+
+    if (cloud) {
+        const note = document.createElement('small');
+        note.className = 'fall-note';
+        note.textContent = cloud;
         descEl.append(note);
     }
     locEl.innerHTML = `${data.name}, ${data.sys.country}`;
