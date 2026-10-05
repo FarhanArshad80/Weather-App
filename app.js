@@ -1154,6 +1154,11 @@ function summariseForecast(data) {
         const shifted = new Date((entry.dt + offset) * 1000);
         const day = days.get(key) || {
             label: DAY_NAMES[shifted.getUTCDay()],
+            // "Tue" is enough to scan by, not enough to plan by: the date is
+            // what goes in a diary. Read in the city's calendar, like the label.
+            date: shifted.toLocaleDateString(undefined, {
+                weekday: 'long', day: 'numeric', month: 'long', timeZone: 'UTC',
+            }),
             min: entry.main.temp_min,
             max: entry.main.temp_max,
             icon: entry.weather[0].icon,
@@ -1456,6 +1461,7 @@ function renderForecast(days) {
     days.forEach((day) => {
         const tile = document.createElement('div');
         tile.className = 'forecast-day';
+        tile.title = day.date;
 
         const label = document.createElement('p');
         label.className = 'forecast-label';
