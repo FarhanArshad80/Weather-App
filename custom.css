@@ -699,6 +699,11 @@ body[data-sky="mist"] {
   transform: translateY(-3px);
 }
 
+.forecast-day--warmest {
+  border-color: rgba(255, 196, 87, 0.75);
+  box-shadow: inset 0 0 0 1px rgba(255, 196, 87, 0.35);
+}
+
 .forecast-label {
   font-size: 0.8rem;
   font-weight: 600;

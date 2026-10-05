@@ -1458,10 +1458,24 @@ function renderForecast(days) {
     // placeholder would be something to read before it can be dismissed.
     forecastNoteEl.textContent = turnNote(days);
 
-    days.forEach((day) => {
+    // The day to plan the outdoor thing for. Picked by the high, and only
+    // when one day actually stands out - a tie, or a single day, has no
+    // warmest worth pointing at.
+    const highs = days.map((day) => Math.round(day.max));
+    const top = Math.max(...highs);
+    const warmest = days.length > 1 && highs.filter((high) => high === top).length === 1
+        ? highs.indexOf(top)
+        : -1;
+
+    days.forEach((day, index) => {
         const tile = document.createElement('div');
         tile.className = 'forecast-day';
         tile.title = day.date;
+
+        if (index === warmest) {
+            tile.classList.add('forecast-day--warmest');
+            tile.title = `${day.date} · warmest of the ${days.length} days`;
+        }
 
         const label = document.createElement('p');
         label.className = 'forecast-label';
