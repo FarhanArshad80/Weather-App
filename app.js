@@ -2139,6 +2139,19 @@ document.addEventListener('keydown', (event) => {
     checkWeather(home);
 });
 
+// Press "s" to copy a link to the city on screen.
+//
+// Sending someone the weather where they are going meant reaching up to the
+// small link icon beside the name. Same guards as the other keys; while the
+// icon is hidden there is no city in the address bar yet, so there is
+// nothing worth copying and the key does nothing.
+document.addEventListener('keydown', (event) => {
+    if (event.key.toLowerCase() !== 's' || event.ctrlKey || event.metaKey || event.altKey) return;
+    if (isTyping() || shareBtn.hidden) return;
+
+    copyCityLink();
+});
+
 cityInput.closest('.search-box').addEventListener('animationend', (event) => {
     event.currentTarget.classList.remove('is-empty');
 });
