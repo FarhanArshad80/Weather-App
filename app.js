@@ -2194,8 +2194,10 @@ cityInput.addEventListener('keydown', (event) => {
     }
 
     // The way back out, for anyone who arrived by keyboard and changed
-    // their mind.
+    // their mind. Half a new name left in the box afterwards read as though
+    // it were the city on the card, so the name on the card goes back in.
     if (event.key === 'Escape') {
+        if (lastReading?.name) cityInput.value = lastReading.name;
         cityInput.blur();
     }
 });
