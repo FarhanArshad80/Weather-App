@@ -1285,9 +1285,22 @@ function renderHours(hours) {
 
     hourlyNoteEl.textContent = rainNote(hours);
 
-    hours.forEach((hour) => {
+    // When the next few hours peak - the block to time the walk for. Only
+    // a single clear warmest; a flat afternoon has no peak to point at.
+    const temps = hours.map((hour) => Math.round(hour.temp));
+    const top = Math.max(...temps);
+    const warmest = hours.length > 1 && temps.filter((temp) => temp === top).length === 1
+        ? temps.indexOf(top)
+        : -1;
+
+    hours.forEach((hour, index) => {
         const tile = document.createElement('div');
         tile.className = 'hour-tile';
+
+        if (index === warmest) {
+            tile.classList.add('hour-tile--warmest');
+            tile.title = 'Warmest of the next few hours';
+        }
 
         const label = document.createElement('p');
         label.className = 'hour-label';

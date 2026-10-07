@@ -845,6 +845,11 @@ body[data-sky="mist"] {
   transform: translateY(-3px);
 }
 
+.hour-tile--warmest {
+  border-color: rgba(255, 196, 87, 0.75);
+  box-shadow: inset 0 0 0 1px rgba(255, 196, 87, 0.35);
+}
+
 .hour-label {
   font-size: 0.7rem;
   font-weight: 600;
