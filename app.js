@@ -1467,6 +1467,14 @@ function renderForecast(days) {
         ? highs.indexOf(top)
         : -1;
 
+    // Its opposite, read off the lows: the night to bring the plants in or
+    // leave the car under cover. Same rule - only a single clear coldest.
+    const lows = days.map((day) => Math.round(day.min));
+    const bottom = Math.min(...lows);
+    const coldest = days.length > 1 && lows.filter((low) => low === bottom).length === 1
+        ? lows.indexOf(bottom)
+        : -1;
+
     days.forEach((day, index) => {
         const tile = document.createElement('div');
         tile.className = 'forecast-day';
@@ -1475,6 +1483,11 @@ function renderForecast(days) {
         if (index === warmest) {
             tile.classList.add('forecast-day--warmest');
             tile.title = `${day.date} · warmest of the ${days.length} days`;
+        }
+
+        if (index === coldest) {
+            tile.classList.add('forecast-day--coldest');
+            tile.title = `${tile.title} · coldest night of the ${days.length} days`;
         }
 
         const label = document.createElement('p');
