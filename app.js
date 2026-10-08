@@ -940,6 +940,11 @@ function renderDaylight(data) {
 
     daylightBox.hidden = false;
     daylightLengthEl.textContent = `${durationText(length)} of daylight`;
+
+    // Halfway between sunrise and sunset is when the sun stands highest -
+    // the hour shadows are shortest and sunburn comes quickest. Rarely
+    // twelve on the clock, so it is worth saying in the city's own time.
+    daylightBox.title = `Sun highest at ${clockText((sunrise + sunset) / 2, data.timezone)}`;
     daylightFillEl.style.setProperty('--daylight-progress', offset);
     daylightMarkerEl.style.setProperty('--daylight-progress', offset);
 
