@@ -850,6 +850,11 @@ body[data-sky="mist"] {
   box-shadow: inset 0 0 0 1px rgba(255, 196, 87, 0.35);
 }
 
+.hour-tile--coldest {
+  border-color: rgba(120, 190, 255, 0.75);
+  box-shadow: inset 0 0 0 1px rgba(120, 190, 255, 0.35);
+}
+
 .hour-label {
   font-size: 0.7rem;
   font-weight: 600;

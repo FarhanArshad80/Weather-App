@@ -1297,6 +1297,12 @@ function renderHours(hours) {
     const warmest = hours.length > 1 && temps.filter((temp) => temp === top).length === 1
         ? temps.indexOf(top)
         : -1;
+    // And the chilliest, for the same reason in reverse: the block to be
+    // back indoors by, or to take a jacket for.
+    const bottom = Math.min(...temps);
+    const coldest = hours.length > 1 && bottom !== top && temps.filter((temp) => temp === bottom).length === 1
+        ? temps.indexOf(bottom)
+        : -1;
 
     hours.forEach((hour, index) => {
         const tile = document.createElement('div');
@@ -1305,6 +1311,11 @@ function renderHours(hours) {
         if (index === warmest) {
             tile.classList.add('hour-tile--warmest');
             tile.title = 'Warmest of the next few hours';
+        }
+
+        if (index === coldest) {
+            tile.classList.add('hour-tile--coldest');
+            tile.title = 'Coldest of the next few hours';
         }
 
         const label = document.createElement('p');
