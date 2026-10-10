@@ -1540,6 +1540,11 @@ function renderForecast(days) {
         const range = document.createElement('p');
         range.className = 'forecast-range';
         range.append(high, low);
+        // How far the day moves between its low and its high - the figure
+        // that decides whether one layer will do or the morning needs two.
+        // Worked out from the rounded readings so it matches what is shown.
+        const swing = Math.round(toTemperature(day.max)) - Math.round(toTemperature(day.min));
+        range.title = `${swing}° between the low and the high`;
 
         tile.append(label, icon, range);
 
