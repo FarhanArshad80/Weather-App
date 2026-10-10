@@ -1332,6 +1332,18 @@ function renderHours(hours) {
         temp.className = 'hour-temp';
         temp.innerHTML = temperatureText(hour.temp);
 
+        // Set against the reading at the top of the card, since "how much
+        // colder will it get" is the question the strip is read for.
+        const current = lastReading?.main?.temp;
+
+        if (typeof current === 'number') {
+            const change = Math.round(toTemperature(hour.temp)) - Math.round(toTemperature(current));
+
+            temp.title = change === 0
+                ? 'Same as now'
+                : `${Math.abs(change)}° ${change > 0 ? 'warmer' : 'colder'} than now`;
+        }
+
         tile.append(label, icon, temp);
 
         // Same rule as the day strip: a dry block should not carry a number
