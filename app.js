@@ -514,6 +514,11 @@ function renderVisibility(data) {
     visibilityCard.hidden = false;
     visibilityEl.textContent = visibilityText(metres);
     visibilityLabelEl.textContent = visibilityWord(metres);
+    // Under a kilometre is where it starts to matter on the road, and the
+    // card is most often read by somebody deciding whether to drive.
+    visibilityCard.title = metres < 1000
+        ? 'Poor for driving - use dipped headlights and leave extra room'
+        : '';
 }
 
 function hideVisibility() {
