@@ -1404,6 +1404,10 @@ function summariseToday(data, currentCelsius) {
 
 const FREEZING_C = 0;
 
+// The other end of the same idea: the afternoon that needs water and shade,
+// on a morning that gives no hint of it. 30° is where most heat advice starts.
+const HOT_C = 30;
+
 function renderTodayRange(range) {
     todayRangeEl.hidden = !range;
 
@@ -1439,6 +1443,14 @@ function renderTodayRange(range) {
             icon: 'fa-snowflake',
             text: 'Freezing later',
             title: 'Expected to drop below freezing before the day is out',
+        });
+    }
+
+    if (range.max >= HOT_C && typeof now === 'number' && now < HOT_C) {
+        parts.push({
+            icon: 'fa-temperature-high',
+            text: 'Hot later',
+            title: `Expected to reach ${temperatureText(HOT_C)} or more before the day is out`,
         });
     }
 
