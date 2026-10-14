@@ -823,12 +823,21 @@ function renderRecent(cities) {
         const pinned = home?.toLowerCase() === city.toLowerCase();
         const chip = document.createElement('span');
         chip.className = pinned ? 'recent-chip is-home' : 'recent-chip';
+        // The city on the card now. With several chips and similar names,
+        // the one already showing should not look like somewhere to go.
+        if (lastReading?.name?.toLowerCase() === city.toLowerCase()) {
+            chip.classList.add('is-current');
+        }
 
         const search = document.createElement('button');
         search.type = 'button';
         search.className = 'recent-chip-name';
         search.textContent = city;
         if (pinned) search.title = 'Press H to come back here';
+        if (chip.classList.contains('is-current')) {
+            search.setAttribute('aria-current', 'true');
+            search.title = search.title ? `Showing now · ${search.title}` : 'Showing now';
+        }
         search.addEventListener('click', () => {
             cityInput.value = city;
             checkWeather(city);

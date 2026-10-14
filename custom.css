@@ -293,6 +293,12 @@ body[data-sky="mist"] {
   border-color: rgba(255, 255, 255, 0.55);
 }
 
+.recent-chip.is-current .recent-chip-name {
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
 .recent-chip-pin {
   display: flex;
   padding: 6px 4px;
