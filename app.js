@@ -1084,7 +1084,14 @@ function renderWeather(data) {
     if (dew !== null) {
         const note = document.createElement('small');
         note.className = 'dew-point';
-        note.textContent = `dew point ${temperatureText(dew)}`;
+        // The usual comfort bands for dew point, so the number arrives
+        // already read: under 10° is dry, past 21° is oppressive.
+        const feel = dew < 10 ? 'dry'
+            : dew < 16 ? 'comfortable'
+            : dew < 19 ? 'sticky'
+            : dew < 22 ? 'muggy'
+            : 'oppressive';
+        note.textContent = `dew point ${temperatureText(dew)} · ${feel}`;
         note.title = 'The temperature the air would have to cool to for dew to form';
         humidityEl.append(note);
     }
