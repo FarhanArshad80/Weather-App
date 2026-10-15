@@ -1096,6 +1096,9 @@ function renderWeather(data) {
         humidityEl.append(note);
     }
     windEl.textContent = windText(data.wind.speed, data.wind.deg);
+    // Sailors and cyclists read wind in knots or metres per second, and the
+    // card only speaks the units it was switched to.
+    windEl.title = `${data.wind.speed.toFixed(1)} m/s · ${Math.round(data.wind.speed * 1.944)} knots`;
 
     // "WSW" has to be turned into a direction in the head; an arrow is
     // already one. It points where the wind is going - the way a flag or a
