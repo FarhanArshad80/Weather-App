@@ -350,6 +350,13 @@ function pressureTrendText(trend) {
 function renderPressure(data) {
     pressureEl.textContent = pressureText(data.main.pressure);
 
+    // Barometers come marked in all three, and the card only speaks the one
+    // its units are set to.
+    const hpa = data.main.pressure;
+    pressureEl.title = typeof hpa === 'number'
+        ? `${Math.round(hpa)} hPa · ${(hpa * INHG_PER_HPA).toFixed(2)} inHg · ${Math.round(hpa * 0.750062)} mmHg`
+        : '';
+
     const trend = pressureTrendText(lastPressureTrend);
 
     if (!trend) return;
