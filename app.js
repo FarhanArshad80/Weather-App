@@ -1146,6 +1146,15 @@ function renderWeather(data) {
     sunriseEl.innerHTML = clockText(data.sys.sunrise, data.timezone);
     sunsetEl.innerHTML = clockText(data.sys.sunset, data.timezone);
 
+    // A clock time in another city's zone is hard to place against "now";
+    // hovering says how far off it is, either way.
+    const nowSeconds = Date.now() / 1000;
+    const relative = (at) => at > nowSeconds
+        ? `in ${durationText(at - nowSeconds)}`
+        : `${durationText(nowSeconds - at)} ago`;
+    sunriseEl.title = relative(data.sys.sunrise);
+    sunsetEl.title = relative(data.sys.sunset);
+
     iconEl.src = `https://openweathermap.org/img/wn/${data.weather[0].icon}@2x.png`;
     // The hour and day tiles already name their icons; the big one said
     // "Weather-Icon" whatever the sky was doing, which is what a screen
