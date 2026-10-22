@@ -1082,6 +1082,12 @@ function renderWeather(data) {
         descEl.append(note);
     }
     locEl.innerHTML = `${data.name}, ${data.sys.country}`;
+
+    // Two towns can share a name and a country; the coordinates are what
+    // tell them apart, and what a map wants pasted in.
+    locEl.title = typeof data.coord?.lat === 'number' && typeof data.coord?.lon === 'number'
+        ? `${Math.abs(data.coord.lat).toFixed(2)}°${data.coord.lat < 0 ? 'S' : 'N'}, ${Math.abs(data.coord.lon).toFixed(2)}°${data.coord.lon < 0 ? 'W' : 'E'}`
+        : '';
     humidityEl.textContent = `${data.main.humidity}%`;
 
     // Under the percentage, the way gusts sit under the wind: the figure
