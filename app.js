@@ -1139,6 +1139,13 @@ function renderWeather(data) {
     }
     feelsLikeEl.innerHTML = temperatureText(data.main.feels_like);
 
+    // Rounded in the units on screen, so the gap matches the two figures
+    // the reader can see rather than a decimal neither of them shows.
+    const gap = Math.round(toTemperature(data.main.feels_like)) - Math.round(toTemperature(data.main.temp));
+    feelsLikeEl.title = gap === 0
+        ? 'The same as the thermometer'
+        : `${Math.abs(gap)}° ${gap < 0 ? 'colder' : 'warmer'} than the thermometer`;
+
     const note = feelsNote(data);
     feelsNoteEl.textContent = note;
     feelsNoteEl.hidden = !note;
