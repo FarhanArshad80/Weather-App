@@ -136,11 +136,11 @@ function skyKey(condition) {
 // it and a colour that keeps the same ordering for anyone who reads the dial
 // before they read the label.
 const AIR_LEVELS = [
-    { label: 'Good', colour: '#5ad07a' },
-    { label: 'Fair', colour: '#c9e05a' },
-    { label: 'Moderate', colour: '#f2c14e' },
-    { label: 'Poor', colour: '#f0805a' },
-    { label: 'Very poor', colour: '#e05a7a' },
+    { label: 'Good', colour: '#5ad07a', advice: 'Fine for everyone to be outdoors' },
+    { label: 'Fair', colour: '#c9e05a', advice: 'Fine for most; very sensitive people may notice it' },
+    { label: 'Moderate', colour: '#f2c14e', advice: 'Sensitive groups should ease off long outdoor effort' },
+    { label: 'Poor', colour: '#f0805a', advice: 'Cut back on hard exercise outdoors' },
+    { label: 'Very poor', colour: '#e05a7a', advice: 'Stay indoors where you can and keep windows shut' },
 ];
 
 // Readings always come back from the API in metric and are converted here,
@@ -1841,6 +1841,8 @@ function renderAirQuality(index, components) {
     airDialEl.style.setProperty('--air-fill', `${(index / AIR_LEVELS.length) * 100}%`);
     airIndexEl.textContent = index;
     airLabelEl.textContent = level.label;
+    // A label like "Moderate" says how bad, not what to do about it.
+    airBox.title = level.advice;
     airPm25El.textContent = `${Math.round(components.pm2_5)}`;
     airPm10El.textContent = `${Math.round(components.pm10)}`;
 }
