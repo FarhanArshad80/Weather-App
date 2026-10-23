@@ -1868,6 +1868,7 @@ function renderAirQuality(index, components) {
     // 24-hour guideline for fine particles is 15.
     airPm25El.title = `${Math.round((components.pm2_5 / 15) * 100)}% of the WHO daily limit of 15`;
     airPm10El.textContent = `${Math.round(components.pm10)}`;
+    airPm10El.title = `${Math.round((components.pm10 / 45) * 100)}% of the WHO daily limit of 45`;
 }
 
 function hideAirQuality() {
