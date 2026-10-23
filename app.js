@@ -1096,6 +1096,11 @@ function renderWeather(data) {
         ? `${Math.abs(data.coord.lat).toFixed(2)}°${data.coord.lat < 0 ? 'S' : 'N'}, ${Math.abs(data.coord.lon).toFixed(2)}°${data.coord.lon < 0 ? 'W' : 'E'}`
         : '';
     humidityEl.textContent = `${data.main.humidity}%`;
+    // Relative humidity moves with the temperature; the water actually in
+    // the air does not, which is what a damp-room or grow-tent reading uses.
+    const t = data.main.temp;
+    const absolute = 6.112 * Math.exp((17.67 * t) / (t + 243.5)) * data.main.humidity * 2.1674 / (273.15 + t);
+    humidityEl.title = `${absolute.toFixed(1)} g of water per m³ of air`;
 
     // Under the percentage, the way gusts sit under the wind: the figure
     // that says what the one above it means.
