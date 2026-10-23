@@ -1060,6 +1060,11 @@ function renderWeather(data) {
     weatherDetails.style.display = 'grid';
 
     tempEl.innerHTML = temperatureText(data.main.temp);
+    // For a visitor or a relative abroad, the figure in the units they
+    // think in, without flipping the switch for everything else.
+    tempEl.title = units === 'imperial'
+        ? `${Math.round(data.main.temp)}°C`
+        : `${Math.round(data.main.temp * 9 / 5 + 32)}°F`;
     descEl.innerHTML = data.weather[0].description;
 
     // Under the description it qualifies, the way the dew point sits under
