@@ -961,6 +961,8 @@ function renderDaylight(data) {
 
     daylightBox.hidden = false;
     daylightLengthEl.textContent = `${durationText(length)} of daylight`;
+    // The other side of the same day: how long the night is.
+    daylightLengthEl.title = `${durationText(DAY_SECONDS - length)} of darkness`;
 
     // Halfway between sunrise and sunset is when the sun stands highest -
     // the hour shadows are shortest and sunburn comes quickest. Rarely
