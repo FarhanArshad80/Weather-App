@@ -1864,6 +1864,9 @@ function renderAirQuality(index, components) {
     // A label like "Moderate" says how bad, not what to do about it.
     airBox.title = level.advice;
     airPm25El.textContent = `${Math.round(components.pm2_5)}`;
+    // A bare µg/m³ figure means nothing without a yardstick; the WHO's
+    // 24-hour guideline for fine particles is 15.
+    airPm25El.title = `${Math.round((components.pm2_5 / 15) * 100)}% of the WHO daily limit of 15`;
     airPm10El.textContent = `${Math.round(components.pm10)}`;
 }
 
