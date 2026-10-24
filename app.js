@@ -594,6 +594,15 @@ function renderLocalTime(data) {
 
     localTimeEl.textContent = text;
     localTimeEl.hidden = !text;
+
+    // The form a meeting invite or a flight booking asks for.
+    if (text) {
+        const offset = data.timezone;
+        const minutes = Math.round(Math.abs(offset) / 60);
+        const hh = Math.floor(minutes / 60);
+        const mm = minutes % 60;
+        localTimeEl.title = `UTC${offset < 0 ? '−' : '+'}${hh}${mm ? `:${String(mm).padStart(2, '0')}` : ''}`;
+    }
 }
 
 function hideLocalTime() {
