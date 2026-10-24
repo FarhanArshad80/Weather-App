@@ -1877,6 +1877,8 @@ function renderAirQuality(index, components) {
     airLabelEl.textContent = level.label;
     // A label like "Moderate" says how bad, not what to do about it.
     airBox.title = level.advice;
+    // The number on the dial is a step on a five-step scale, not a reading.
+    airDialEl.title = `Index ${index} of ${AIR_LEVELS.length} · 1 is best`;
     airPm25El.textContent = `${Math.round(components.pm2_5)}`;
     // A bare µg/m³ figure means nothing without a yardstick; the WHO's
     // 24-hour guideline for fine particles is 15.
