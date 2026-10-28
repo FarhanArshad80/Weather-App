@@ -520,10 +520,15 @@ function renderVisibility(data) {
 
     visibilityCard.hidden = false;
     visibilityEl.textContent = visibilityText(metres);
+    // The other system's figure, for whoever thinks in it — the same way the
+    // wind card gives knots beside the speed.
+    visibilityEl.title = units === 'imperial'
+        ? (metres < FOG_M ? `${Math.round(metres / 10) * 10} m` : `${(metres / 1000).toFixed(1)} km`)
+        : `${(metres / METRES_PER_MILE).toFixed(1)} mi`;
     visibilityLabelEl.textContent = visibilityWord(metres);
     // Under a kilometre is where it starts to matter on the road, and the
     // card is most often read by somebody deciding whether to drive.
-    visibilityCard.title = metres < 1000
+    visibilityCard.title = metres < FOG_M
         ? 'Poor for driving - use dipped headlights and leave extra room'
         : '';
 }
