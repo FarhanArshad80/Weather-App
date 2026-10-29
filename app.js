@@ -1025,6 +1025,9 @@ function renderReadingAge() {
         : age < FRESH_UNDER_MS
             ? 'Updated just now'
             : `Updated ${durationText(age / 1000)} ago`;
+    // "Ago" is the right thing to read and a clock time the right thing to
+    // compare against another tab or the radio.
+    readingAgeTextEl.title = `Fetched at ${new Date(lastReadingAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} your time`;
 
     // Past the age the app refreshes itself at, the line stops being a
     // timestamp and starts being a caveat - it only gets this old when a
