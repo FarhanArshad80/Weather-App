@@ -993,15 +993,18 @@ function renderDaylight(data) {
     if (now < sunrise) {
         daylightBox.dataset.phase = 'night';
         daylightCaptionEl.textContent = `Sunrise in ${durationText(sunrise - now)}`;
+        daylightCaptionEl.title = `At ${clockText(sunrise, data.timezone)} local time`;
     } else if (now > sunset) {
         daylightBox.dataset.phase = 'night';
         // Today's sunset has gone, so the next sunrise is tomorrow's - and
         // this response only carries today's. A day on from it is out by a
         // couple of minutes at most, which the wording already rounds away.
         daylightCaptionEl.textContent = `Sunrise in ${durationText(sunrise + DAY_SECONDS - now)}`;
+        daylightCaptionEl.title = `At about ${clockText(sunrise + DAY_SECONDS, data.timezone)} local time`;
     } else {
         daylightBox.dataset.phase = 'day';
         daylightCaptionEl.textContent = `${durationText(sunset - now)} of daylight left`;
+        daylightCaptionEl.title = `Sunset at ${clockText(sunset, data.timezone)} local time`;
     }
 }
 
