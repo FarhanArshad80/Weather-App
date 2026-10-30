@@ -984,6 +984,11 @@ function renderDaylight(data) {
     daylightBox.title = `Sun highest at ${clockText((sunrise + sunset) / 2, data.timezone)}`;
     daylightFillEl.style.setProperty('--daylight-progress', offset);
     daylightMarkerEl.style.setProperty('--daylight-progress', offset);
+    // Only while the sun is up: before sunrise and after sunset the marker
+    // sits at an end of the bar and the caption already says what is next.
+    daylightMarkerEl.title = now >= sunrise && now <= sunset
+        ? `${Math.round(progress * 100)}% of the way through the daylight`
+        : '';
 
     if (now < sunrise) {
         daylightBox.dataset.phase = 'night';
