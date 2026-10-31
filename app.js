@@ -1411,6 +1411,9 @@ function renderHours(hours) {
         const label = document.createElement('p');
         label.className = 'hour-label';
         label.textContent = hour.label;
+        // A clock time in the city's own zone, which is not always the
+        // reader's: how far off it is says the same thing either way.
+        label.title = `In ${durationText(hour.at - Date.now() / 1000)}`;
 
         const icon = document.createElement('img');
         icon.className = 'hour-icon';
