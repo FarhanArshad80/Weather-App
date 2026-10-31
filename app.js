@@ -1092,7 +1092,7 @@ function renderWeather(data) {
     tempEl.title = units === 'imperial'
         ? `${Math.round(data.main.temp)}°C`
         : `${Math.round(data.main.temp * 9 / 5 + 32)}°F`;
-    descEl.innerHTML = data.weather[0].description;
+    descEl.textContent = data.weather[0].description;
 
     // Under the description it qualifies, the way the dew point sits under
     // the humidity.
@@ -1113,7 +1113,7 @@ function renderWeather(data) {
         note.textContent = cloud;
         descEl.append(note);
     }
-    locEl.innerHTML = `${data.name}, ${data.sys.country}`;
+    locEl.textContent = `${data.name}, ${data.sys.country}`;
 
     // Two towns can share a name and a country; the coordinates are what
     // tell them apart, and what a map wants pasted in.
