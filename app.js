@@ -1649,10 +1649,12 @@ function renderForecast(days) {
         const high = document.createElement('span');
         high.className = 'forecast-high';
         high.textContent = temperatureText(day.max);
+        high.title = 'Highest of the day';
 
         const low = document.createElement('span');
         low.className = 'forecast-low';
         low.textContent = temperatureText(day.min);
+        low.title = 'Lowest of the day';
 
         const range = document.createElement('p');
         range.className = 'forecast-range';
