@@ -1900,6 +1900,8 @@ function renderAirQuality(index, components) {
     airDialEl.style.setProperty('--air-fill', `${(index / AIR_LEVELS.length) * 100}%`);
     airIndexEl.textContent = index;
     airLabelEl.textContent = level.label;
+    // Where the word sits on the scale, which a single label cannot say.
+    airLabelEl.title = AIR_LEVELS.map((entry, i) => (i === index - 1 ? `[${entry.label}]` : entry.label)).join(' · ');
     // A label like "Moderate" says how bad, not what to do about it.
     airBox.title = level.advice;
     // The number on the dial is a step on a five-step scale, not a reading.
