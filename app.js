@@ -1606,6 +1606,7 @@ function renderForecast(days) {
     // Empty rather than a dash when the week is flat: there is no news, and a
     // placeholder would be something to read before it can be dismissed.
     forecastNoteEl.textContent = turnNote(days);
+    forecastNoteEl.title = days.length > 1 ? `${days[0].label} to ${days[days.length - 1].label}` : '';
 
     // The day to plan the outdoor thing for. Picked by the high, and only
     // when one day actually stands out - a tie, or a single day, has no
