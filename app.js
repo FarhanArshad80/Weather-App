@@ -1379,6 +1379,9 @@ function renderHours(hours) {
     if (hours.length === 0) return;
 
     hourlyNoteEl.textContent = rainNote(hours);
+    // "The next few hours" is vague on purpose in the sentence; the hover
+    // says exactly which ones the strip reaches.
+    hourlyNoteEl.title = `Covers ${hours[0].label} to ${hours[hours.length - 1].label} local time`;
 
     // When the next few hours peak - the block to time the walk for. Only
     // a single clear warmest; a flat afternoon has no peak to point at.
