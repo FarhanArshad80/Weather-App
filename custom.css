@@ -1334,3 +1334,33 @@ body[data-sky="mist"] {
 .shortcuts-close:focus-visible {
   background: rgba(255, 255, 255, 0.28);
 }
+
+/* Quiet, at the foot of the card: it is help, not part of the weather. */
+.shortcuts-btn {
+  display: block;
+  margin: 18px auto 0;
+  padding: 4px 10px;
+  border: 0;
+  background: none;
+  color: rgba(255, 255, 255, 0.5);
+  font-family: inherit;
+  font-size: 0.75rem;
+  cursor: pointer;
+  transition: color 0.2s;
+}
+
+.shortcuts-btn:hover,
+.shortcuts-btn:focus-visible {
+  color: #fff;
+}
+
+.shortcuts-btn i {
+  margin-right: 4px;
+}
+
+/* Touch screens have no keyboard to take shortcuts from. */
+@media (hover: none) and (pointer: coarse) {
+  .shortcuts-btn {
+    display: none;
+  }
+}
