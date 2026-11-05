@@ -2244,6 +2244,10 @@ imperialBtn.addEventListener('click', () => setUnits('imperial'));
 // in the box as a character instead of taking you to it. Modifier
 // combinations are left alone too: they belong to the browser.
 function isTyping() {
+    // With the shortcut list open, the card behind it is out of reach to the
+    // mouse, and pressing "u" there should not change it unseen either.
+    if (shortcutsEl.open) return true;
+
     const typing = document.activeElement;
 
     return Boolean(
