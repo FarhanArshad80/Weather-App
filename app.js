@@ -49,6 +49,7 @@ const placesEl = document.getElementById('place-picker');
 const localTimeEl = document.getElementById('local-time');
 const suggestionsEl = document.getElementById('city-suggestions');
 const shortcutsEl = document.getElementById('shortcuts');
+const shortcutsBtn = document.getElementById('shortcuts-btn');
 
 // Your active API key
 const API_KEY = 'dfa121f8ce06e9d26b31b58ed5795778'; 
@@ -2227,6 +2228,7 @@ searchBtn.addEventListener('click', () => {
 locateBtn.addEventListener('click', locateMe);
 refreshBtn.addEventListener('click', refreshNow);
 shareBtn.addEventListener('click', copyCityLink);
+shortcutsBtn.addEventListener('click', () => shortcutsEl.showModal());
 
 metricBtn.addEventListener('click', () => setUnits('metric'));
 imperialBtn.addEventListener('click', () => setUnits('imperial'));
