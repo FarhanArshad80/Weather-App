@@ -2345,6 +2345,19 @@ document.addEventListener('keydown', (event) => {
     shortcutsEl.showModal();
 });
 
+// A click on the backdrop lands on the dialog element itself, since the
+// backdrop belongs to it - but so does a click in the dialog's own padding.
+// Checking the point against the box tells the two apart.
+shortcutsEl.addEventListener('click', (event) => {
+    if (event.target !== shortcutsEl) return;
+
+    const box = shortcutsEl.getBoundingClientRect();
+    const inside = event.clientX >= box.left && event.clientX <= box.right
+        && event.clientY >= box.top && event.clientY <= box.bottom;
+
+    if (!inside) shortcutsEl.close();
+});
+
 cityInput.closest('.search-box').addEventListener('animationend', (event) => {
     event.currentTarget.classList.remove('is-empty');
 });
