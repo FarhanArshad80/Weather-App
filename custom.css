@@ -1298,3 +1298,18 @@ body[data-sky="mist"] {
   font-size: 0.85rem;
   color: rgba(255, 255, 255, 0.85);
 }
+
+/* Drawn as keys so "U" reads as something to press, not a stray letter. */
+.shortcuts kbd {
+  display: inline-block;
+  min-width: 28px;
+  padding: 3px 8px;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-bottom-width: 3px;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.1);
+  font-family: inherit;
+  font-size: 0.78rem;
+  font-weight: 600;
+  text-align: center;
+}
