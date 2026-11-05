@@ -759,6 +759,12 @@ function summaryText(data) {
         `Feels like ${temperatureText(data.main.feels_like)} · humidity ${data.main.humidity}% · wind ${windText(data.wind.speed, data.wind.deg)}`,
     ];
 
+    // The forecast arrives after the reading, so it may not be here yet;
+    // the text is still worth sending without it.
+    if (lastToday) {
+        lines.push(`Rest of today: ${temperatureText(lastToday.min)} to ${temperatureText(lastToday.max)}`);
+    }
+
     return lines.join('\n');
 }
 
@@ -779,7 +785,7 @@ async function copySummary() {
             copyStatusEl.textContent = '';
         }, 1600);
     } catch (error) {
-        window.prompt('Copy this:', text.replace('\n', ' — '));
+        window.prompt('Copy this:', text.replaceAll('\n', ' — '));
     }
 }
 
