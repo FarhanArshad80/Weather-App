@@ -10,6 +10,20 @@ A responsive, lightweight web application designed to deliver real-time weather 
 - **Clean UI**: the background changes to match the weather.
 - **Responsive design**: works in desktop and mobile browsers.
 
+## Keyboard Shortcuts
+| Key | What it does |
+| --- | --- |
+| `/` | Jump to the search box |
+| `Enter` | Search for the city typed |
+| `Esc` | Leave the search box |
+| `U` | Switch between °C and °F |
+| `R` | Check for a newer reading |
+| `L` | Weather where you are |
+| `H` | Go back to your pinned home city |
+| `S` | Copy a link to this city |
+| `C` | Copy the weather as text |
+| `?` | Show the list of shortcuts |
+
 ## Tech Stack
 * **Frontend**: HTML5, CSS3, JavaScript (ES6+)
 
