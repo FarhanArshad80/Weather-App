@@ -950,6 +950,7 @@ function showError(html) {
     // and there is no reading here worth sending anybody a link to, or
     // dating.
     shareBtn.hidden = true;
+    copySummaryBtn.hidden = true;
     readingAgeEl.hidden = true;
     feelsNoteEl.hidden = true;
     document.body.dataset.sky = 'default';
@@ -1152,6 +1153,7 @@ function renderWeather(data) {
         descEl.append(note);
     }
     locEl.textContent = `${data.name}, ${data.sys.country}`;
+    copySummaryBtn.hidden = false;
 
     // Two towns can share a name and a country; the coordinates are what
     // tell them apart, and what a map wants pasted in.
