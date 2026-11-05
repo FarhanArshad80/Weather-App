@@ -9,6 +9,7 @@ const metricBtn = document.getElementById('unit-metric');
 const imperialBtn = document.getElementById('unit-imperial');
 const locateBtn = document.getElementById('locate-btn');
 const shareBtn = document.getElementById('share-btn');
+const copySummaryBtn = document.getElementById('copy-summary-btn');
 
 const tempEl = document.getElementById('temp');
 const descEl = document.getElementById('description');
