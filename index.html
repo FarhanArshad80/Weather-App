@@ -181,6 +181,23 @@
         </div>
     </div>
 
+    <!-- Every key the app answers to, in one place. Until now the only way
+         to find them was to hover each button and read its tooltip. -->
+    <dialog class="shortcuts" id="shortcuts" aria-labelledby="shortcuts-title">
+        <h3 class="shortcuts-title" id="shortcuts-title">Keyboard shortcuts</h3>
+        <dl class="shortcuts-list">
+            <div><dt><kbd>/</kbd></dt><dd>Jump to the search box</dd></div>
+            <div><dt><kbd>Enter</kbd></dt><dd>Search for the city typed</dd></div>
+            <div><dt><kbd>Esc</kbd></dt><dd>Leave the search box</dd></div>
+            <div><dt><kbd>U</kbd></dt><dd>Switch between °C and °F</dd></div>
+            <div><dt><kbd>R</kbd></dt><dd>Check for a newer reading</dd></div>
+            <div><dt><kbd>L</kbd></dt><dd>Weather where you are</dd></div>
+            <div><dt><kbd>H</kbd></dt><dd>Go back to your pinned home city</dd></div>
+            <div><dt><kbd>S</kbd></dt><dd>Copy a link to this city</dd></div>
+            <div><dt><kbd>?</kbd></dt><dd>Show this list</dd></div>
+        </dl>
+    </dialog>
+
     <script src="app.js"></script>
 </body>
 </html>
