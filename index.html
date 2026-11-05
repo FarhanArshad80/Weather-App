@@ -196,6 +196,11 @@
             <div><dt><kbd>S</kbd></dt><dd>Copy a link to this city</dd></div>
             <div><dt><kbd>?</kbd></dt><dd>Show this list</dd></div>
         </dl>
+        <!-- A form with method="dialog" closes the dialog on submit, with
+             no script needed. Esc already does the same. -->
+        <form method="dialog">
+            <button type="submit" class="shortcuts-close" autofocus>Got it</button>
+        </form>
     </dialog>
 
     <script src="app.js"></script>
