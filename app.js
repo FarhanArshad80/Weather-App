@@ -2384,6 +2384,17 @@ document.addEventListener('keydown', (event) => {
     copyCityLink();
 });
 
+// Press "c" to copy the weather on screen as text.
+//
+// The partner of "s": one sends the page, this sends the answer. Same guards
+// as the other keys, and nothing happens while there is no reading.
+document.addEventListener('keydown', (event) => {
+    if (event.key.toLowerCase() !== 'c' || event.ctrlKey || event.metaKey || event.altKey) return;
+    if (isTyping() || copySummaryBtn.hidden) return;
+
+    copySummary();
+});
+
 // Press "?" for the list of every key above.
 //
 // Each shortcut is mentioned in its own button's tooltip, which only helps
