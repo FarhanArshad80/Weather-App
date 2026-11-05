@@ -1271,6 +1271,25 @@ body[data-sky="mist"] {
   box-shadow: 0 20px 50px rgba(0, 0, 0, 0.35);
 }
 
+.shortcuts[open] {
+  animation: shortcuts-in 0.18s ease-out;
+}
+
+@keyframes shortcuts-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.98);
+  }
+}
+
+/* Kept here rather than in the reduced-motion block above, which comes
+   earlier in the file and would lose to the rule it is meant to switch off. */
+@media (prefers-reduced-motion: reduce) {
+  .shortcuts[open] {
+    animation: none;
+  }
+}
+
 .shortcuts::backdrop {
   background: rgba(8, 14, 30, 0.55);
   backdrop-filter: blur(3px);
