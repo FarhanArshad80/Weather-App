@@ -761,6 +761,20 @@ function summaryText(data) {
     return lines.join('\n');
 }
 
+// Same fallback as the link: when the clipboard is refused, the text is
+// put where it can be selected and copied by hand.
+async function copySummary() {
+    if (!lastReading) return;
+
+    const text = summaryText(lastReading);
+
+    try {
+        await navigator.clipboard.writeText(text);
+    } catch (error) {
+        window.prompt('Copy this:', text.replace('\n', ' — '));
+    }
+}
+
 function recallHome() {
     try {
         const stored = localStorage.getItem(HOME_KEY);
@@ -2242,6 +2256,7 @@ searchBtn.addEventListener('click', () => {
 locateBtn.addEventListener('click', locateMe);
 refreshBtn.addEventListener('click', refreshNow);
 shareBtn.addEventListener('click', copyCityLink);
+copySummaryBtn.addEventListener('click', copySummary);
 shortcutsBtn.addEventListener('click', () => shortcutsEl.showModal());
 
 metricBtn.addEventListener('click', () => setUnits('metric'));
