@@ -10,6 +10,7 @@ const imperialBtn = document.getElementById('unit-imperial');
 const locateBtn = document.getElementById('locate-btn');
 const shareBtn = document.getElementById('share-btn');
 const copySummaryBtn = document.getElementById('copy-summary-btn');
+const copyStatusEl = document.getElementById('copy-status');
 
 const tempEl = document.getElementById('temp');
 const descEl = document.getElementById('description');
@@ -770,6 +771,13 @@ async function copySummary() {
 
     try {
         await navigator.clipboard.writeText(text);
+
+        copySummaryBtn.classList.add('is-copied');
+        copyStatusEl.textContent = 'Weather copied';
+        setTimeout(() => {
+            copySummaryBtn.classList.remove('is-copied');
+            copyStatusEl.textContent = '';
+        }, 1600);
     } catch (error) {
         window.prompt('Copy this:', text.replace('\n', ' — '));
     }
