@@ -48,6 +48,7 @@ const todayRangeEl = document.getElementById('today-range');
 const placesEl = document.getElementById('place-picker');
 const localTimeEl = document.getElementById('local-time');
 const suggestionsEl = document.getElementById('city-suggestions');
+const shortcutsEl = document.getElementById('shortcuts');
 
 // Your active API key
 const API_KEY = 'dfa121f8ce06e9d26b31b58ed5795778'; 
@@ -2330,6 +2331,18 @@ document.addEventListener('keydown', (event) => {
     if (isTyping() || shareBtn.hidden) return;
 
     copyCityLink();
+});
+
+// Press "?" for the list of every key above.
+//
+// Each shortcut is mentioned in its own button's tooltip, which only helps
+// somebody who already hovers everything. Shift is allowed here - it is how
+// "?" gets typed on most keyboards - but the other modifiers are not.
+document.addEventListener('keydown', (event) => {
+    if (event.key !== '?' || event.ctrlKey || event.metaKey || event.altKey) return;
+    if (isTyping() || shortcutsEl.open) return;
+
+    shortcutsEl.showModal();
 });
 
 cityInput.closest('.search-box').addEventListener('animationend', (event) => {
