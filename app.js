@@ -747,6 +747,19 @@ async function copyCityLink() {
     }
 }
 
+// The reading as a couple of lines of plain text, for pasting into a chat.
+// A link answers "what is it like there" only for somebody willing to open
+// it; this answers it in the message itself. Written in whichever units are
+// switched on, since that is what the person sending it reads in.
+function summaryText(data) {
+    const lines = [
+        `${data.name}, ${data.sys.country}: ${temperatureText(data.main.temp)}, ${data.weather[0].description}`,
+        `Feels like ${temperatureText(data.main.feels_like)} · humidity ${data.main.humidity}% · wind ${windText(data.wind.speed, data.wind.deg)}`,
+    ];
+
+    return lines.join('\n');
+}
+
 function recallHome() {
     try {
         const stored = localStorage.getItem(HOME_KEY);
