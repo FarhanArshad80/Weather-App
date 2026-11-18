@@ -30,5 +30,6 @@ A responsive, lightweight web application designed to deliver real-time weather 
 ## Getting Started
 Simply clone the repository and open `index.html` in your browser:
 ```bash
-git clone [https://github.com/your-username/WheatherApp.git](https://github.com/your-username/WheatherApp.git)
-cd WheatherApp
+git clone https://github.com/FarhanArshad80/Weather-App.git
+cd Weather-App
+```
