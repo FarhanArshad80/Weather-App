@@ -26,6 +26,8 @@ A responsive, lightweight web application designed to deliver real-time weather 
 
 ## Tech Stack
 * **Frontend**: HTML5, CSS3, JavaScript (ES6+)
+* **Weather data**: [OpenWeatherMap](https://openweathermap.org/api) (Current Weather, 5 Day / 3 Hour Forecast, Geocoding and Air Pollution APIs)
+* **Icons**: Font Awesome
 
 ## Getting Started
 Simply clone the repository and open `index.html` in your browser:
