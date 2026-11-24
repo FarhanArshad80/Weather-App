@@ -35,3 +35,8 @@ Simply clone the repository and open `index.html` in your browser:
 git clone https://github.com/FarhanArshad80/Weather-App.git
 cd Weather-App
 ```
+
+The app ships with a shared OpenWeatherMap key in `app.js`. It is rate-limited
+across everyone using it, so if requests start failing, sign up for a free key at
+[openweathermap.org](https://home.openweathermap.org/users/sign_up) and replace
+the value of `API_KEY` near the top of `app.js`.
